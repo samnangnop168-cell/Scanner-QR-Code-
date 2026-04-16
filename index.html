@@ -3,54 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMT Tracker Pro</title>
+    <title>SMT Tracker - User Select</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f1f5f9; --text: #1e293b; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; box-sizing: border-box; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px; box-sizing: border-box; }
         .hidden { display: none !important; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
-        .btn { background: var(--primary); color: white; padding: 15px; border: none; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
-        .btn:disabled { opacity: 0.6; }
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 15px; background: #000; }
-        .user-header { display: flex; justify-content: space-between; width: 100%; max-width: 400px; margin-bottom: 10px; font-size: 0.85rem; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 15px; background: white; border-radius: 8px; overflow: hidden; }
-        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
-        th { background: #f8fafc; }
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; }
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 15px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; box-sizing: border-box; background: #fff; }
+        .btn { background: var(--primary); color: white; padding: 16px; border: none; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
+        .user-tag { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; width: 100%; max-width: 450px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-top: 15px; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+        .badge { padding: 2px 4px; border-radius: 4px; font-weight: bold; font-size: 0.6rem; }
         .reg { background: #dcfce7; color: #166534; }
         .conf { background: #dbeafe; color: #1e40af; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="card">
-        <h2 style="text-align:center; margin:0 0 15px 0;">Operator Login</h2>
-        <input type="text" id="login-id" placeholder="User ID">
-        <input type="password" id="login-pass" placeholder="Password">
-        <button class="btn" id="login-btn" onclick="handleLogin()">LOGIN</button>
-        <p style="text-align:center; font-size: 0.85rem;">New Operator? <a href="#" onclick="toggleScreen()">Register Account</a></p>
+    <div id="setup-screen" class="card hidden">
+        <h2 style="text-align:center; margin-top:0;">Select Operator</h2>
+        <p style="text-align:center; font-size:0.8rem; color:#64748b;">Which user are you? (Device will remember this)</p>
+        <select id="user-select-list">
+            <option value="">-- Choose User --</option>
+            </select>
+        <button class="btn" onclick="saveUser()">CONFIRM & START</button>
     </div>
 
-    <div id="register-screen" class="card hidden">
-        <h2 style="text-align:center; margin:0 0 15px 0;">Create Account</h2>
-        <input type="text" id="reg-id" placeholder="Create User ID">
-        <input type="password" id="reg-pass" placeholder="Create Password">
-        <button class="btn" style="background:#64748b" id="reg-btn" onclick="handleRegister()">REGISTER ID</button>
-        <p style="text-align:center; font-size: 0.85rem;"><a href="#" onclick="toggleScreen()">Back to Login</a></p>
-    </div>
-
-    <div id="app-screen" class="hidden" style="width: 100%; max-width: 450px;">
-        <div class="user-header">
-            <span>Operator: <span id="display-user" style="color:var(--primary)"></span></span>
-            <a href="#" onclick="logout()" style="color:#ef4444; text-decoration:none;">Logout</a>
+    <div id="main-screen" class="hidden" style="width:100%; max-width:450px;">
+        <div class="user-tag">
+            <span>Operator: <b id="display-user" style="color:var(--primary)"></b></span>
+            <span onclick="resetUser()" style="color:#94a3b8; cursor:pointer; font-size:0.7rem; text-decoration:underline;">Change User</span>
         </div>
-        
+
         <div class="card">
-            <div id="status" style="text-align:center; font-weight:bold; height:20px; margin-bottom:5px;"></div>
+            <div id="status" style="text-align:center; font-weight:bold; height:20px; margin-bottom:5px; font-size:0.9rem;"></div>
             <div id="reader"></div>
-            
+
+            <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">PROCESS TYPE</label>
             <select id="proc-type">
                 <option value="Register">Register</option>
                 <option value="Confirm">Confirm</option>
@@ -64,80 +56,63 @@
             <input type="text" id="m-box" readonly placeholder="Box No">
             <input type="number" id="m-qty" placeholder="Enter Qty" style="border: 2px solid var(--primary);">
             
-            <button class="btn" id="sub-btn" onclick="submitData()">SUBMIT RECORD</button>
+            <button class="btn" id="sub-btn" onclick="submitData()">SUBMIT TO RECORD</button>
         </div>
 
-        <table id="history-table">
-            <thead><tr><th>Type</th><th>Model</th><th>Qty</th></tr></thead>
+        <table>
+            <thead><tr><th>Time</th><th>Type</th><th>Model</th><th>Qty</th></tr></thead>
             <tbody id="history-body"></tbody>
         </table>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqLdeScQq-m_gF2cJg4s1gl5yaUw-NnhFIum322NMflIZQ9066JwEgxrppbx9wltVo_Q/exec";
+        // REPLACE WITH YOUR URL
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0-2POyPWTSemLxCDBeyVcIMcF1Koxl94AH2-QyoKKnu-oZ7rnbkLC3C-nwvc0oXZXTw/exec";
         
-        let currentUser = localStorage.getItem('smt_active_user');
+        let activeUser = localStorage.getItem('smt_operator_fixed');
         const scanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: 250 });
 
-        if (currentUser) { showApp(); }
-
-        function toggleScreen() {
-            document.getElementById('login-screen').classList.toggle('hidden');
-            document.getElementById('register-screen').classList.toggle('hidden');
-        }
-
-        async function handleLogin() {
-            const id = document.getElementById('login-id').value;
-            const pass = document.getElementById('login-pass').value;
-            if(!id || !pass) return alert("Enter credentials");
-
-            document.getElementById('login-btn').disabled = true;
-            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "login", id, pass }) });
-            const text = await res.text();
-            
-            if (text === "success") {
-                currentUser = id;
-                localStorage.setItem('smt_active_user', id);
-                showApp();
-            } else { alert("Invalid ID or Password"); }
-            document.getElementById('login-btn').disabled = false;
-        }
-
-        async function handleRegister() {
-            const id = document.getElementById('reg-id').value;
-            const pass = document.getElementById('reg-pass').value;
-            if(!id || !pass) return alert("Enter ID and Password");
-
-            document.getElementById('reg-btn').disabled = true;
-            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "registerUser", id, pass }) });
-            const text = await res.text();
-            
-            if (text === "exists") {
-                alert("User ID already exists!");
-            } else {
-                alert("Account Created! You can login now.");
-                toggleScreen();
+        window.onload = function() {
+            // Generate User List 1-15
+            const list = document.getElementById('user-select-list');
+            for(let i=1; i<=15; i++) {
+                let opt = document.createElement('option');
+                opt.value = "User " + i;
+                opt.innerHTML = "User " + i;
+                list.appendChild(opt);
             }
-            document.getElementById('reg-btn').disabled = false;
+
+            if (!activeUser) {
+                document.getElementById('setup-screen').classList.remove('hidden');
+            } else {
+                showApp();
+            }
+        };
+
+        function saveUser() {
+            const selected = document.getElementById('user-select-list').value;
+            if (!selected) return alert("Please select a User ID");
+            localStorage.setItem('smt_operator_fixed', selected);
+            activeUser = selected;
+            showApp();
         }
 
         function showApp() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('register-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.remove('hidden');
-            document.getElementById('display-user').innerText = currentUser;
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('main-screen').classList.remove('hidden');
+            document.getElementById('display-user').innerText = activeUser;
             scanner.render(onScanSuccess);
-            updateHistoryTable();
+            updateHistory();
         }
 
         function onScanSuccess(text) {
             scanner.pause(true);
             const p = text.split(',');
             if (p.length >= 4) {
-                document.getElementById('m-name').value = p[0];
-                document.getElementById('m-side').value = p[1];
-                document.getElementById('m-loc').value = p[2];
-                document.getElementById('m-box').value = p[3];
+                document.getElementById('m-name').value = p[0].trim();
+                document.getElementById('m-side').value = p[1].trim();
+                document.getElementById('m-loc').value = p[2].trim();
+                document.getElementById('m-box').value = p[3].trim();
                 document.getElementById('m-qty').focus();
                 msg("✔ Scanned", "#3b82f6");
             }
@@ -146,42 +121,44 @@
         async function submitData() {
             const qty = document.getElementById('m-qty').value;
             const model = document.getElementById('m-name').value;
-            if (!model || !qty) return alert("Scan QR and enter Qty");
+            if (!model || !qty) return alert("Scan QR and enter Quantity");
+
+            const now = new Date();
+            const timeStr = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
 
             const payload = {
-                action: "saveData",
-                user: currentUser,
+                user: activeUser,
                 process: document.getElementById('proc-type').value,
                 model: model,
                 side: document.getElementById('m-side').value,
                 loc: document.getElementById('m-loc').value,
                 box: document.getElementById('m-box').value,
-                qty: qty
+                qty: qty,
+                localTime: timeStr
             };
 
             msg("Saving...", "orange");
             document.getElementById('sub-btn').disabled = true;
 
-            // Local Update
-            let history = JSON.parse(localStorage.getItem('smt_hist_' + currentUser)) || [];
+            let history = JSON.parse(localStorage.getItem('smt_local_logs')) || [];
             history.unshift(payload);
-            localStorage.setItem('smt_hist_' + currentUser, JSON.stringify(history.slice(0,10)));
-            updateHistoryTable();
+            localStorage.setItem('smt_local_logs', JSON.stringify(history.slice(0, 10)));
+            updateHistory();
 
-            // Cloud Upload
             fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
             .then(() => {
-                msg("✔ Recorded", "#10b981");
+                msg("✔ Saved " + timeStr, "#10b981");
                 ['m-name', 'm-side', 'm-loc', 'm-box', 'm-qty'].forEach(id => document.getElementById(id).value = "");
                 scanner.resume();
             })
             .finally(() => document.getElementById('sub-btn').disabled = false);
         }
 
-        function updateHistoryTable() {
-            const hist = JSON.parse(localStorage.getItem('smt_hist_' + currentUser)) || [];
+        function updateHistory() {
+            const hist = JSON.parse(localStorage.getItem('smt_local_logs')) || [];
             document.getElementById('history-body').innerHTML = hist.map(h => `
                 <tr>
+                    <td style="color:#64748b">${h.localTime}</td>
                     <td><span class="badge ${h.process === 'Register' ? 'reg' : 'conf'}">${h.process}</span></td>
                     <td>${h.model}</td>
                     <td><b>${h.qty}</b></td>
@@ -194,9 +171,11 @@
             s.innerText = t; s.style.color = c;
         }
 
-        function logout() {
-            localStorage.removeItem('smt_active_user');
-            location.reload();
+        function resetUser() {
+            if(confirm("Reset user selection?")) {
+                localStorage.removeItem('smt_operator_fixed');
+                location.reload();
+            }
         }
     </script>
 </body>
