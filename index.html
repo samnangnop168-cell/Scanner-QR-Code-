@@ -3,25 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMT Tracker - Multi-User</title>
+    <title>SMT Tracker Pro</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f1f5f9; --text: #1e293b; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; box-sizing: border-box; }
         .hidden { display: none !important; }
-        
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
-        .btn { background: var(--primary); color: white; padding: 15px; border: none; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
+        .btn { background: var(--primary); color: white; padding: 15px; border: none; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
+        .btn:disabled { opacity: 0.6; }
         #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 15px; background: #000; }
         .user-header { display: flex; justify-content: space-between; width: 100%; max-width: 400px; margin-bottom: 10px; font-size: 0.85rem; font-weight: bold; }
-        
         table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 15px; background: white; border-radius: 8px; overflow: hidden; }
         th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
-        th { background: #f8fafc; color: #64748b; }
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; }
+        th { background: #f8fafc; }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; }
         .reg { background: #dcfce7; color: #166534; }
         .conf { background: #dbeafe; color: #1e40af; }
     </style>
@@ -29,64 +26,59 @@
 <body>
 
     <div id="login-screen" class="card">
-        <h2 style="text-align:center; margin-top:0;">Operator Login</h2>
-        <div id="login-msg" style="text-align:center; font-size:0.8rem; color:red;"></div>
+        <h2 style="text-align:center; margin:0 0 15px 0;">Operator Login</h2>
         <input type="text" id="login-id" placeholder="User ID">
         <input type="password" id="login-pass" placeholder="Password">
         <button class="btn" id="login-btn" onclick="handleLogin()">LOGIN</button>
-        <p style="text-align:center; font-size: 0.85rem;">New Operator? <a href="#" onclick="toggleScreen()">Register here</a></p>
+        <p style="text-align:center; font-size: 0.85rem;">New Operator? <a href="#" onclick="toggleScreen()">Register Account</a></p>
     </div>
 
     <div id="register-screen" class="card hidden">
-        <h2 style="text-align:center; margin-top:0;">Create ID</h2>
+        <h2 style="text-align:center; margin:0 0 15px 0;">Create Account</h2>
         <input type="text" id="reg-id" placeholder="Create User ID">
         <input type="password" id="reg-pass" placeholder="Create Password">
-        <button class="btn" style="background:#64748b" onclick="handleRegister()">CREATE ACCOUNT</button>
+        <button class="btn" style="background:#64748b" id="reg-btn" onclick="handleRegister()">REGISTER ID</button>
         <p style="text-align:center; font-size: 0.85rem;"><a href="#" onclick="toggleScreen()">Back to Login</a></p>
     </div>
 
     <div id="app-screen" class="hidden" style="width: 100%; max-width: 450px;">
         <div class="user-header">
             <span>Operator: <span id="display-user" style="color:var(--primary)"></span></span>
-            <a href="#" onclick="logout()" style="color:#ef4444; text-decoration:none;">Logout ✖</a>
+            <a href="#" onclick="logout()" style="color:#ef4444; text-decoration:none;">Logout</a>
         </div>
         
         <div class="card">
-            <div id="status" style="text-align:center; font-weight:bold; height:20px; margin-bottom:5px; font-size:0.85rem;"></div>
+            <div id="status" style="text-align:center; font-weight:bold; height:20px; margin-bottom:5px;"></div>
             <div id="reader"></div>
             
-            <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">PROCESS TYPE</label>
             <select id="proc-type">
                 <option value="Register">Register</option>
                 <option value="Confirm">Confirm</option>
             </select>
 
-            <input type="text" id="m-name" readonly placeholder="Scan QR to Start">
+            <input type="text" id="m-name" readonly placeholder="Waiting for Scan...">
             <div style="display:flex; gap:10px">
                 <input type="text" id="m-side" readonly placeholder="Side">
-                <input type="text" id="m-loc" readonly placeholder="Location">
+                <input type="text" id="m-loc" readonly placeholder="Loc">
             </div>
-            <input type="text" id="m-box" readonly placeholder="Box Number">
-            <input type="number" id="m-qty" placeholder="Enter Quantity" style="border: 2px solid var(--primary); background: #fff;">
+            <input type="text" id="m-box" readonly placeholder="Box No">
+            <input type="number" id="m-qty" placeholder="Enter Qty" style="border: 2px solid var(--primary);">
             
-            <button class="btn" id="sub-btn" onclick="submitData()">SUBMIT TO SHEET</button>
+            <button class="btn" id="sub-btn" onclick="submitData()">SUBMIT RECORD</button>
         </div>
 
-        <h4 style="margin: 15px 0 5px 0;">Your Recent Scans</h4>
-        <table>
-            <thead><tr><th>Type</th><th>Model</th><th>Loc</th><th>Qty</th></tr></thead>
+        <table id="history-table">
+            <thead><tr><th>Type</th><th>Model</th><th>Qty</th></tr></thead>
             <tbody id="history-body"></tbody>
         </table>
     </div>
 
     <script>
-        // PASTE YOUR URL HERE
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxVsfj_DgebJZhuk96a29CAUsARxQ9JXhINL_tEWIGACWv2B-ggCmJyXw3RWUfpR9FrXg/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJDoEi9EsJR9bVKSoxShQ67WMPKQ8kOzuPNgHJihfX5atOwtY6qkjvvwIEB3-IxG3ZpQ/exec";
         
         let currentUser = localStorage.getItem('smt_active_user');
         const scanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: 250 });
 
-        // Check if already logged in
         if (currentUser) { showApp(); }
 
         function toggleScreen() {
@@ -97,37 +89,36 @@
         async function handleLogin() {
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
-            if(!id || !pass) return;
+            if(!id || !pass) return alert("Enter credentials");
 
             document.getElementById('login-btn').disabled = true;
-            try {
-                const res = await fetch(SCRIPT_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: "login", id, pass }) 
-                });
-                const text = await res.text();
-                if (text === "success") {
-                    currentUser = id;
-                    localStorage.setItem('smt_active_user', id);
-                    showApp();
-                } else {
-                    document.getElementById('login-msg').innerText = "Invalid ID or Password";
-                }
-            } catch (e) { alert("Network Error"); }
+            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "login", id, pass }) });
+            const text = await res.text();
+            
+            if (text === "success") {
+                currentUser = id;
+                localStorage.setItem('smt_active_user', id);
+                showApp();
+            } else { alert("Invalid ID or Password"); }
             document.getElementById('login-btn').disabled = false;
         }
 
         async function handleRegister() {
             const id = document.getElementById('reg-id').value;
             const pass = document.getElementById('reg-pass').value;
-            if(!id || !pass) return;
+            if(!id || !pass) return alert("Enter ID and Password");
 
-            await fetch(SCRIPT_URL, { 
-                method: 'POST', 
-                body: JSON.stringify({ action: "registerUser", id, pass }) 
-            });
-            alert("Account Registered! Please login.");
-            toggleScreen();
+            document.getElementById('reg-btn').disabled = true;
+            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "registerUser", id, pass }) });
+            const text = await res.text();
+            
+            if (text === "exists") {
+                alert("User ID already exists!");
+            } else {
+                alert("Account Created! You can login now.");
+                toggleScreen();
+            }
+            document.getElementById('reg-btn').disabled = false;
         }
 
         function showApp() {
@@ -140,25 +131,22 @@
         }
 
         function onScanSuccess(text) {
-            scanner.pause(true); // Freeze camera
+            scanner.pause(true);
             const p = text.split(',');
             if (p.length >= 4) {
-                document.getElementById('m-name').value = p[0].trim();
-                document.getElementById('m-side').value = p[1].trim();
-                document.getElementById('m-loc').value = p[2].trim();
-                document.getElementById('m-box').value = p[3].trim();
+                document.getElementById('m-name').value = p[0];
+                document.getElementById('m-side').value = p[1];
+                document.getElementById('m-loc').value = p[2];
+                document.getElementById('m-box').value = p[3];
                 document.getElementById('m-qty').focus();
-                msg("✔ Scan OK", "#3b82f6");
-            } else {
-                msg("❌ Format Error", "red");
-                scanner.resume();
+                msg("✔ Scanned", "#3b82f6");
             }
         }
 
         async function submitData() {
             const qty = document.getElementById('m-qty').value;
             const model = document.getElementById('m-name').value;
-            if (!model || !qty) return alert("Scan QR and enter Quantity");
+            if (!model || !qty) return alert("Scan QR and enter Qty");
 
             const payload = {
                 action: "saveData",
@@ -174,20 +162,19 @@
             msg("Saving...", "orange");
             document.getElementById('sub-btn').disabled = true;
 
-            // 1. Update Local History
+            // Local Update
             let history = JSON.parse(localStorage.getItem('smt_hist_' + currentUser)) || [];
             history.unshift(payload);
             localStorage.setItem('smt_hist_' + currentUser, JSON.stringify(history.slice(0,10)));
             updateHistoryTable();
 
-            // 2. Background Upload
+            // Cloud Upload
             fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
             .then(() => {
-                msg("✔ Data Logged", "#10b981");
-                clearForm();
+                msg("✔ Recorded", "#10b981");
+                ['m-name', 'm-side', 'm-loc', 'm-box', 'm-qty'].forEach(id => document.getElementById(id).value = "");
                 scanner.resume();
             })
-            .catch(() => msg("❌ Cloud Error", "red"))
             .finally(() => document.getElementById('sub-btn').disabled = false);
         }
 
@@ -197,14 +184,9 @@
                 <tr>
                     <td><span class="badge ${h.process === 'Register' ? 'reg' : 'conf'}">${h.process}</span></td>
                     <td>${h.model}</td>
-                    <td>${h.loc}</td>
                     <td><b>${h.qty}</b></td>
                 </tr>
             `).join('');
-        }
-
-        function clearForm() {
-            ['m-name', 'm-side', 'm-loc', 'm-box', 'm-qty'].forEach(id => document.getElementById(id).value = "");
         }
 
         function msg(t, c) {
