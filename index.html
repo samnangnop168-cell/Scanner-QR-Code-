@@ -3,54 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR History Logger</title>
+    <title>QR Split-Data Logger</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f1f5f9; }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; }
         .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px; box-sizing: border-box; }
         #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #000; }
-        .result-box { margin-top: 15px; }
-        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; background: #f8fafc; box-sizing: border-box; }
+        
+        /* Form Styling */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .form-group { display: flex; flex-direction: column; }
+        .full-width { grid-column: span 2; }
+        label { font-size: 0.75rem; color: #64748b; font-weight: bold; margin-bottom: 4px; }
+        input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background: #f8fafc; }
         
         .controls { display: flex; gap: 10px; margin-top: 15px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-download { background: #10b981; color: white; }
-        .btn-clear { background: #ef4444; color: white; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-download { background: #10b981; }
+        .btn-clear { background: #ef4444; }
 
-        .history-card { width: 100%; max-width: 450px; margin-top: 20px; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #f1f5f9; }
-        th { color: #64748b; text-transform: uppercase; font-size: 0.75rem; }
+        .history-card { width: 100%; max-width: 450px; margin-top: 20px; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.75rem; min-width: 400px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #f1f5f9; }
+        th { background: #f8fafc; color: #64748b; }
         .status { color: #10b981; font-weight: bold; text-align: center; height: 20px; font-size: 0.9rem; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h3 style="margin-top:0; text-align: center;">QR Auto-Scanner</h3>
+        <h3 style="margin-top:0; text-align: center;">Production QR Logger</h3>
         <div id="status" class="status"></div>
         
         <div id="reader"></div>
 
-        <div class="result-box">
-            <label style="font-size: 0.8rem; color: #64748b;">Last Scan:</label>
-            <input type="text" id="qr-input" placeholder="Waiting for QR code..." readonly>
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label>Model Name</label>
+                <input type="text" id="model-name" placeholder="Waiting...">
+            </div>
+            <div class="form-group">
+                <label>Side</label>
+                <input type="text" id="side-id" placeholder="...">
+            </div>
+            <div class="form-group">
+                <label>Location ID</label>
+                <input type="text" id="location-id" placeholder="...">
+            </div>
+            <div class="form-group full-width">
+                <label>Box No.</label>
+                <input type="text" id="box-no" placeholder="...">
+            </div>
         </div>
 
         <div class="controls">
-            <button class="btn-download" onclick="downloadCSV()">Export Excel</button>
+            <button class="btn-download" onclick="downloadCSV()">Export CSV</button>
             <button class="btn-clear" onclick="clearHistory()">Clear All</button>
         </div>
     </div>
 
     <div class="history-card">
-        <h4 style="margin:0;">Scan History</h4>
+        <h4 style="margin:0;">Recent Scans</h4>
         <table id="history-table">
             <thead>
                 <tr>
                     <th>Time</th>
-                    <th>Data</th>
+                    <th>Model</th>
+                    <th>Side</th>
+                    <th>Loc</th>
+                    <th>Box</th>
                 </tr>
             </thead>
             <tbody id="history-body"></tbody>
@@ -58,80 +80,92 @@
     </div>
 
     <script>
-        let scanHistory = JSON.parse(localStorage.getItem('qr_history')) || [];
+        let scanHistory = JSON.parse(localStorage.getItem('prod_history')) || [];
         let lastResult = "";
 
-        // Initialize UI
         updateTable();
 
-        // 1. Setup Scanner
         const scanner = new Html5QrcodeScanner("reader", { 
             fps: 15, 
             qrbox: { width: 250, height: 250 },
             rememberLastUsedCamera: true
         });
 
-        // 2. Scan Success Logic
         function onScanSuccess(decodedText) {
-            // Prevent duplicate logs of the same code in a row
             if (decodedText === lastResult) return;
-            
             lastResult = decodedText;
-            document.getElementById('qr-input').value = decodedText;
             
-            const timestamp = new Date().toLocaleString();
-            const entry = { time: timestamp, data: decodedText };
-            
-            // Save to array and LocalStorage
-            scanHistory.unshift(entry); // Add to top
-            localStorage.setItem('qr_history', JSON.stringify(scanHistory));
-            
-            // UI Updates
-            showStatus("Saved Successfully!");
-            updateTable();
+            // LOGIC: Split the data by comma
+            // Expected format: "MEG-CPU,Side-A,12A3,Box1"
+            const parts = decodedText.split(',');
+
+            if (parts.length >= 4) {
+                // Auto-fill the inputs
+                document.getElementById('model-name').value = parts[0].trim();
+                document.getElementById('side-id').value = parts[1].trim();
+                document.getElementById('location-id').value = parts[2].trim();
+                document.getElementById('box-no').value = parts[3].trim();
+
+                // Save to history object
+                const timestamp = new Date().toLocaleTimeString();
+                const entry = {
+                    time: timestamp,
+                    model: parts[0].trim(),
+                    side: parts[1].trim(),
+                    loc: parts[2].trim(),
+                    box: parts[3].trim()
+                };
+
+                scanHistory.unshift(entry);
+                localStorage.setItem('prod_history', JSON.stringify(scanHistory));
+                
+                showStatus("Data Split & Saved!");
+                updateTable();
+            } else {
+                showStatus("Error: Invalid QR Format");
+                document.getElementById('status').style.color = "red";
+            }
         }
 
         function updateTable() {
             const tbody = document.getElementById('history-body');
-            tbody.innerHTML = scanHistory.map(item => `
+            tbody.innerHTML = scanHistory.slice(0, 10).map(item => `
                 <tr>
-                    <td>${item.time.split(',')[1]}</td>
-                    <td>${item.data}</td>
+                    <td>${item.time}</td>
+                    <td>${item.model}</td>
+                    <td>${item.side}</td>
+                    <td>${item.loc}</td>
+                    <td>${item.box}</td>
                 </tr>
             `).join('');
         }
 
         function showStatus(msg) {
             const s = document.getElementById('status');
+            s.style.color = "#10b981";
             s.innerText = msg;
             setTimeout(() => s.innerText = "", 2000);
         }
 
-        // 3. Export to CSV (Excel)
         function downloadCSV() {
-            if (scanHistory.length === 0) return alert("No data to export");
-            
-            let csvContent = "data:text/csv;charset=utf-8,Time,Data\n";
-            scanHistory.forEach(row => {
-                csvContent += `"${row.time}","${row.data}"\n`;
+            if (scanHistory.length === 0) return alert("No data");
+            let csv = "Time,Model Name,Side,Location ID,Box No\n";
+            scanHistory.forEach(r => {
+                csv += `"${r.time}","${r.model}","${r.side}","${r.loc}","${r.box}"\n`;
             });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "qr_scan_history.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'Production_Log.csv');
+            a.click();
         }
 
         function clearHistory() {
-            if(confirm("Delete all history?")) {
+            if(confirm("Clear all?")) {
                 scanHistory = [];
-                localStorage.removeItem('qr_history');
+                localStorage.removeItem('prod_history');
                 updateTable();
-                lastResult = "";
-                document.getElementById('qr-input').value = "";
             }
         }
 
