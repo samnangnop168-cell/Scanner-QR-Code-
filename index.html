@@ -15,10 +15,8 @@
         .full { grid-column: span 2; }
         .group { display: flex; flex-direction: column; }
         label { font-size: 0.75rem; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f1f5f9; color: #1e293b; -webkit-appearance: none; }
-        
-        /* Highlight Inputs */
-        #process-select, #qty-input { border: 2px solid var(--primary); background: #ffffff; }
+        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f1f5f9; color: #1e293b; }
+        #qty-input { border: 2px solid var(--primary); background: #ffffff; }
 
         .btn-submit { background: var(--primary); color: white; width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; margin-top: 20px; cursor: pointer; }
         .btn-submit:active { transform: scale(0.98); background: #1d4ed8; }
@@ -29,8 +27,6 @@
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; font-size: 0.75rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #f1f5f9; }
         th { background: #f1f5f9; color: #64748b; }
-        
-        /* Badges for Table */
         .badge { padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.65rem; }
         .reg { background: #dcfce7; color: #166534; }
         .conf { background: #dbeafe; color: #1e40af; }
@@ -71,7 +67,7 @@
             </div>
             <div class="group full">
                 <label style="color: var(--primary);">Quantity (Manual)</label>
-                <input type="number" id="qty-input" placeholder="Type Q'ty here...">
+                <input type="number" id="qty-input" placeholder="Enter amount...">
             </div>
         </div>
 
@@ -79,7 +75,7 @@
     </div>
 
     <div class="history">
-        <h4 style="margin: 10px 0;">Recent Activity (Local Only)</h4>
+        <h4 style="margin: 10px 0;">Local History</h4>
         <table id="history-table">
             <thead>
                 <tr>
@@ -91,25 +87,22 @@
             </thead>
             <tbody id="history-body"></tbody>
         </table>
-        <button onclick="clearLocalHistory()" style="margin-top:10px; font-size:0.7rem; background:none; border:none; color:#94a3b8; text-decoration:underline; cursor:pointer;">Clear List</button>
     </div>
 
     <script>
-        // 1. !!! REPLACE THIS URL WITH YOUR GOOGLE SCRIPT URL !!!
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNLOpLGsnEnNOy3o66QXHHQfHCqgzy1TYOQslt2-jX750TfHWHqnzS95gcqZgf0MTn_g/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNLOpLGsnEnNOy3o66QXHHQfHCqgzy1TYOQslt2-jX750TfHWHqnzS95gcqZgf0MTn_g/exec"; // PASTE YOUR URL HERE
 
-        let lastCode = "";
         let localHistory = JSON.parse(localStorage.getItem('smt_local_v1')) || [];
-
         window.onload = updateTableUI;
 
         const scanner = new Html5QrcodeScanner("reader", { 
-            fps: 20, qrbox: { width: 250, height: 250 } 
+            fps: 15, qrbox: { width: 250, height: 250 } 
         });
 
         function onScanSuccess(text) {
-            if (text === lastCode) return;
-            lastCode = text;
+            // 1. STOP CAMERA immediately so it doesn't scan twice
+            scanner.pause(true); 
+            
             const p = text.split(',');
             if (p.length >= 4) {
                 document.getElementById('model-name').value = p[0].trim();
@@ -118,7 +111,10 @@
                 document.getElementById('box-no').value = p[3].trim();
                 
                 document.getElementById('qty-input').focus();
-                msg("✔ Scanned", "#3b82f6");
+                msg("✔ Scanned. Camera Paused.", "#3b82f6");
+            } else {
+                msg("❌ Format Error", "red");
+                scanner.resume(); // Restart camera if format is wrong
             }
         }
 
@@ -132,17 +128,15 @@
 
             if (!model || !qty) return alert("Please scan QR and enter Q'ty!");
 
-            msg("Sending to Cloud...", "orange");
+            msg("Saving...", "orange");
             document.getElementById('submit-btn').disabled = true;
 
-            // Update Local History Immediately
-            const entry = { process, model, loc, qty };
-            localHistory.unshift(entry);
-            if(localHistory.length > 20) localHistory.pop(); // Keep last 20 rows
+            // Instant Local Update
+            localHistory.unshift({ process, model, loc, qty });
             localStorage.setItem('smt_local_v1', JSON.stringify(localHistory));
             updateTableUI();
 
-            // Background send to Google Sheets
+            // Send to Google Sheets
             fetch(SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -151,14 +145,16 @@
             .then(() => {
                 msg("✔ Record Saved", "#10b981");
                 resetForm();
+                // 2. RESTART CAMERA for the next item
+                scanner.resume(); 
             })
-            .catch(() => msg("❌ Network Error", "red"))
+            .catch(() => msg("❌ Error Saving", "red"))
             .finally(() => document.getElementById('submit-btn').disabled = false);
         }
 
         function updateTableUI() {
             const body = document.getElementById('history-body');
-            body.innerHTML = localHistory.map(h => `
+            body.innerHTML = localHistory.slice(0, 10).map(h => `
                 <tr>
                     <td><span class="badge ${h.process === 'Register' ? 'reg' : 'conf'}">${h.process}</span></td>
                     <td>${h.model}</td>
@@ -168,21 +164,12 @@
             `).join('');
         }
 
-        function clearLocalHistory() {
-            if(confirm("Clear local list?")) {
-                localHistory = [];
-                localStorage.removeItem('smt_local_v1');
-                updateTableUI();
-            }
-        }
-
         function resetForm() {
             document.getElementById('model-name').value = "";
             document.getElementById('side-id').value = "";
             document.getElementById('location-id').value = "";
             document.getElementById('box-no').value = "";
             document.getElementById('qty-input').value = "";
-            lastCode = ""; 
         }
 
         function msg(t, c) {
