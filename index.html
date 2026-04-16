@@ -3,149 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web QR Scanner</title>
+    <title>QR History Logger</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
     <style>
-        :root {
-            --primary: #2563eb;
-            --dark: #1e293b;
-        }
+        :root { --primary: #2563eb; --bg: #f1f5f9; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px; box-sizing: border-box; }
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #000; }
+        .result-box { margin-top: 15px; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; background: #f8fafc; box-sizing: border-box; }
+        
+        .controls { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-download { background: #10b981; color: white; }
+        .btn-clear { background: #ef4444; color: white; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f8fafc;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        h2 { color: var(--dark); text-align: center; margin-bottom: 20px; }
-
-        /* Scanner Styling */
-        #reader {
-            width: 100%;
-            border-radius: 8px;
-            overflow: hidden;
-            border: none !important; /* Removes library default border */
-        }
-
-        /* Form Styling */
-        .form-group {
-            margin-top: 25px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #64748b;
-            margin-bottom: 8px;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            background-color: #f1f5f9;
-        }
-
-        button {
-            width: 100%;
-            margin-top: 15px;
-            padding: 12px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        button:hover { background-color: #1d4ed8; }
-
-        #status {
-            margin-top: 10px;
-            text-align: center;
-            font-size: 0.875rem;
-            color: #10b981;
-            font-weight: 500;
-        }
+        .history-card { width: 100%; max-width: 450px; margin-top: 20px; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #f1f5f9; }
+        th { color: #64748b; text-transform: uppercase; font-size: 0.75rem; }
+        .status { color: #10b981; font-weight: bold; text-align: center; height: 20px; font-size: 0.9rem; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>QR Data Entry</h2>
+        <h3 style="margin-top:0; text-align: center;">QR Auto-Scanner</h3>
+        <div id="status" class="status"></div>
         
         <div id="reader"></div>
 
-        <div class="form-group">
-            <label for="scanned-result">Scanned Content</label>
-            <input type="text" id="scanned-result" placeholder="Scan a code to fill..." readonly>
-            
-            <button onclick="handleSubmit()">Save Data</button>
-            <p id="status"></p>
+        <div class="result-box">
+            <label style="font-size: 0.8rem; color: #64748b;">Last Scan:</label>
+            <input type="text" id="qr-input" placeholder="Waiting for QR code..." readonly>
+        </div>
+
+        <div class="controls">
+            <button class="btn-download" onclick="downloadCSV()">Export Excel</button>
+            <button class="btn-clear" onclick="clearHistory()">Clear All</button>
         </div>
     </div>
 
+    <div class="history-card">
+        <h4 style="margin:0;">Scan History</h4>
+        <table id="history-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+        </table>
+    </div>
+
     <script>
-        // Initialize the Scanner
-        const html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", 
-            { 
-                fps: 15, 
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0 
-            }
-        );
+        let scanHistory = JSON.parse(localStorage.getItem('qr_history')) || [];
+        let lastResult = "";
 
-        // What happens when a QR is found
-        function onScanSuccess(decodedText, decodedResult) {
-            // Fill the input field
-            document.getElementById('scanned-result').value = decodedText;
+        // Initialize UI
+        updateTable();
+
+        // 1. Setup Scanner
+        const scanner = new Html5QrcodeScanner("reader", { 
+            fps: 15, 
+            qrbox: { width: 250, height: 250 },
+            rememberLastUsedCamera: true
+        });
+
+        // 2. Scan Success Logic
+        function onScanSuccess(decodedText) {
+            // Prevent duplicate logs of the same code in a row
+            if (decodedText === lastResult) return;
             
-            // Visual feedback
-            document.getElementById('status').innerText = "? Code Scanned Successfully!";
-            document.getElementById('status').style.color = "#10b981";
-
-            // Optional: Stop scanning after one success
-            // html5QrcodeScanner.clear();
+            lastResult = decodedText;
+            document.getElementById('qr-input').value = decodedText;
+            
+            const timestamp = new Date().toLocaleString();
+            const entry = { time: timestamp, data: decodedText };
+            
+            // Save to array and LocalStorage
+            scanHistory.unshift(entry); // Add to top
+            localStorage.setItem('qr_history', JSON.stringify(scanHistory));
+            
+            // UI Updates
+            showStatus("Saved Successfully!");
+            updateTable();
         }
 
-        function onScanFailure(error) {
-            // We ignore scan failures (usually just "no QR found in frame")
+        function updateTable() {
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = scanHistory.map(item => `
+                <tr>
+                    <td>${item.time.split(',')[1]}</td>
+                    <td>${item.data}</td>
+                </tr>
+            `).join('');
         }
 
-        // Start the scanner
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        function showStatus(msg) {
+            const s = document.getElementById('status');
+            s.innerText = msg;
+            setTimeout(() => s.innerText = "", 2000);
+        }
 
-        // Handle the button click
-        function handleSubmit() {
-            const data = document.getElementById('scanned-result').value;
-            if (data) {
-                alert("Data to be saved: " + data);
-                // Here you would typically send 'data' to a database
-            } else {
-                alert("Please scan a QR code first!");
+        // 3. Export to CSV (Excel)
+        function downloadCSV() {
+            if (scanHistory.length === 0) return alert("No data to export");
+            
+            let csvContent = "data:text/csv;charset=utf-8,Time,Data\n";
+            scanHistory.forEach(row => {
+                csvContent += `"${row.time}","${row.data}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "qr_scan_history.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function clearHistory() {
+            if(confirm("Delete all history?")) {
+                scanHistory = [];
+                localStorage.removeItem('qr_history');
+                updateTable();
+                lastResult = "";
+                document.getElementById('qr-input').value = "";
             }
         }
-    </script>
 
+        scanner.render(onScanSuccess);
+    </script>
 </body>
 </html>
