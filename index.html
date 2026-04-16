@@ -3,20 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMT Tracker - User Select</title>
+    <title>SMT Production Tracker</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px; box-sizing: border-box; }
-        .hidden { display: none !important; }
         #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 15px; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; box-sizing: border-box; background: #fff; }
-        .btn { background: var(--primary); color: white; padding: 16px; border: none; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
+        .hidden { display: none !important; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .full { grid-column: span 2; }
+        .group { display: flex; flex-direction: column; }
+        label { font-size: 0.75rem; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
+        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f1f5f9; color: #1e293b; }
+        #qty-input { border: 2px solid var(--primary); background: #ffffff; }
+
+        .btn-submit { background: var(--primary); color: white; width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        .btn-submit:active { transform: scale(0.98); background: #1d4ed8; }
+        
+        .status { text-align: center; height: 25px; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; }
         .user-tag { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; width: 100%; max-width: 450px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-top: 15px; background: white; border-radius: 8px; overflow: hidden; }
-        th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
-        .badge { padding: 2px 4px; border-radius: 4px; font-weight: bold; font-size: 0.6rem; }
+        
+        .history { width: 100%; max-width: 450px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; font-size: 0.75rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #f1f5f9; }
+        th { background: #f1f5f9; color: #64748b; }
+        .badge { padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.65rem; }
         .reg { background: #dcfce7; color: #166534; }
         .conf { background: #dbeafe; color: #1e40af; }
     </style>
@@ -25,55 +38,80 @@
 
     <div id="setup-screen" class="card hidden">
         <h2 style="text-align:center; margin-top:0;">Select Operator</h2>
-        <p style="text-align:center; font-size:0.8rem; color:#64748b;">Which user are you? (Device will remember this)</p>
+        <p style="text-align:center; font-size:0.8rem; color:#64748b;">Device will remember this selection.</p>
         <select id="user-select-list">
             <option value="">-- Choose User --</option>
-            </select>
-        <button class="btn" onclick="saveUser()">CONFIRM & START</button>
+        </select>
+        <button class="btn-submit" onclick="saveUser()">CONFIRM & START</button>
     </div>
 
     <div id="main-screen" class="hidden" style="width:100%; max-width:450px;">
         <div class="user-tag">
             <span>Operator: <b id="display-user" style="color:var(--primary)"></b></span>
-            <span onclick="resetUser()" style="color:#94a3b8; cursor:pointer; font-size:0.7rem; text-decoration:underline;">Change User</span>
+            <span onclick="resetUser()" style="color:#94a3b8; cursor:pointer; text-decoration:underline;">Change User</span>
         </div>
 
         <div class="card">
-            <div id="status" style="text-align:center; font-weight:bold; height:20px; margin-bottom:5px; font-size:0.9rem;"></div>
+            <h3 style="margin: 0 0 15px 0; text-align: center;">Production Entry</h3>
+            <div id="status" class="status"></div>
             <div id="reader"></div>
 
-            <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">PROCESS TYPE</label>
-            <select id="proc-type">
-                <option value="Register">Register</option>
-                <option value="Confirm">Confirm</option>
-            </select>
-
-            <input type="text" id="m-name" readonly placeholder="Waiting for Scan...">
-            <div style="display:flex; gap:10px">
-                <input type="text" id="m-side" readonly placeholder="Side">
-                <input type="text" id="m-loc" readonly placeholder="Loc">
+            <div class="form-grid">
+                <div class="group full">
+                    <label>Process Type</label>
+                    <select id="process-select">
+                        <option value="Register">Register</option>
+                        <option value="Confirm">Confirm</option>
+                    </select>
+                </div>
+                <div class="group full">
+                    <label>Model Name</label>
+                    <input type="text" id="model-name" readonly placeholder="Waiting for scan...">
+                </div>
+                <div class="group">
+                    <label>Side</label>
+                    <input type="text" id="side-id" readonly>
+                </div>
+                <div class="group">
+                    <label>Location ID</label>
+                    <input type="text" id="location-id" readonly>
+                </div>
+                <div class="group full">
+                    <label>Box No.</label>
+                    <input type="text" id="box-no" readonly>
+                </div>
+                <div class="group full">
+                    <label style="color: var(--primary);">Quantity (Manual)</label>
+                    <input type="number" id="qty-input" placeholder="Enter amount...">
+                </div>
             </div>
-            <input type="text" id="m-box" readonly placeholder="Box No">
-            <input type="number" id="m-qty" placeholder="Enter Qty" style="border: 2px solid var(--primary);">
-            
-            <button class="btn" id="sub-btn" onclick="submitData()">SUBMIT TO RECORD</button>
+
+            <button class="btn-submit" id="submit-btn" onclick="submitData()">SUBMIT TO RECORD</button>
         </div>
 
-        <table>
-            <thead><tr><th>Time</th><th>Type</th><th>Model</th><th>Qty</th></tr></thead>
-            <tbody id="history-body"></tbody>
-        </table>
+        <div class="history">
+            <h4 style="margin: 10px 0;">Local History</h4>
+            <table id="history-table">
+                <thead>
+                    <tr><th>Type</th><th>Model</th><th>Loc</th><th>Q'ty</th></tr>
+                </thead>
+                <tbody id="history-body"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
-        // REPLACE WITH YOUR URL
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0-2POyPWTSemLxCDBeyVcIMcF1Koxl94AH2-QyoKKnu-oZ7rnbkLC3C-nwvc0oXZXTw/exec";
-        
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzBEFwssaXYS1zppuefyY4IvYAjLUZfBxKUpGs0gYDeHk4ihNKgeO7ZShyUVHuJGCbSHQ/exec"; // PASTE YOUR URL HERE
+
         let activeUser = localStorage.getItem('smt_operator_fixed');
-        const scanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: 250 });
+        let localHistory = JSON.parse(localStorage.getItem('smt_local_v1')) || [];
+        
+        const scanner = new Html5QrcodeScanner("reader", { 
+            fps: 15, qrbox: { width: 250, height: 250 } 
+        });
 
         window.onload = function() {
-            // Generate User List 1-15
+            // Fill User List 1-15
             const list = document.getElementById('user-select-list');
             for(let i=1; i<=15; i++) {
                 let opt = document.createElement('option');
@@ -101,81 +139,89 @@
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('main-screen').classList.remove('hidden');
             document.getElementById('display-user').innerText = activeUser;
+            updateTableUI();
             scanner.render(onScanSuccess);
-            updateHistory();
         }
 
         function onScanSuccess(text) {
-            scanner.pause(true);
+            scanner.pause(true); 
             const p = text.split(',');
             if (p.length >= 4) {
-                document.getElementById('m-name').value = p[0].trim();
-                document.getElementById('m-side').value = p[1].trim();
-                document.getElementById('m-loc').value = p[2].trim();
-                document.getElementById('m-box').value = p[3].trim();
-                document.getElementById('m-qty').focus();
-                msg("✔ Scanned", "#3b82f6");
+                document.getElementById('model-name').value = p[0].trim();
+                document.getElementById('side-id').value = p[1].trim();
+                document.getElementById('location-id').value = p[2].trim();
+                document.getElementById('box-no').value = p[3].trim();
+                document.getElementById('qty-input').focus();
+                msg("✔ Scanned. Camera Paused.", "#3b82f6");
+            } else {
+                msg("❌ Format Error", "red");
+                scanner.resume();
             }
         }
 
-        async function submitData() {
-            const qty = document.getElementById('m-qty').value;
-            const model = document.getElementById('m-name').value;
-            if (!model || !qty) return alert("Scan QR and enter Quantity");
+        function submitData() {
+            const process = document.getElementById('process-select').value;
+            const model = document.getElementById('model-name').value;
+            const side = document.getElementById('side-id').value;
+            const loc = document.getElementById('location-id').value;
+            const box = document.getElementById('box-no').value;
+            const qty = document.getElementById('qty-input').value;
 
-            const now = new Date();
-            const timeStr = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
-
-            const payload = {
-                user: activeUser,
-                process: document.getElementById('proc-type').value,
-                model: model,
-                side: document.getElementById('m-side').value,
-                loc: document.getElementById('m-loc').value,
-                box: document.getElementById('m-box').value,
-                qty: qty,
-                localTime: timeStr
-            };
+            if (!model || !qty) return alert("Please scan QR and enter Q'ty!");
 
             msg("Saving...", "orange");
-            document.getElementById('sub-btn').disabled = true;
+            document.getElementById('submit-btn').disabled = true;
 
-            let history = JSON.parse(localStorage.getItem('smt_local_logs')) || [];
-            history.unshift(payload);
-            localStorage.setItem('smt_local_logs', JSON.stringify(history.slice(0, 10)));
-            updateHistory();
+            // Local Update
+            localHistory.unshift({ process, model, loc, qty });
+            localStorage.setItem('smt_local_v1', JSON.stringify(localHistory.slice(0, 10)));
+            updateTableUI();
 
-            fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
-            .then(() => {
-                msg("✔ Saved " + timeStr, "#10b981");
-                ['m-name', 'm-side', 'm-loc', 'm-box', 'm-qty'].forEach(id => document.getElementById(id).value = "");
-                scanner.resume();
+            // Send to Google Sheets (Added the 'user' field)
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({ user: activeUser, process, model, side, loc, box, qty })
             })
-            .finally(() => document.getElementById('sub-btn').disabled = false);
+            .then(() => {
+                msg("✔ Record Saved", "#10b981");
+                resetForm();
+                scanner.resume(); 
+            })
+            .catch(() => msg("❌ Error Saving", "red"))
+            .finally(() => document.getElementById('submit-btn').disabled = false);
         }
 
-        function updateHistory() {
-            const hist = JSON.parse(localStorage.getItem('smt_local_logs')) || [];
-            document.getElementById('history-body').innerHTML = hist.map(h => `
+        function updateTableUI() {
+            const body = document.getElementById('history-body');
+            body.innerHTML = localHistory.slice(0, 10).map(h => `
                 <tr>
-                    <td style="color:#64748b">${h.localTime}</td>
                     <td><span class="badge ${h.process === 'Register' ? 'reg' : 'conf'}">${h.process}</span></td>
                     <td>${h.model}</td>
+                    <td>${h.loc}</td>
                     <td><b>${h.qty}</b></td>
                 </tr>
             `).join('');
         }
 
-        function msg(t, c) {
-            const s = document.getElementById('status');
-            s.innerText = t; s.style.color = c;
+        function resetForm() {
+            document.getElementById('model-name').value = "";
+            document.getElementById('side-id').value = "";
+            document.getElementById('location-id').value = "";
+            document.getElementById('box-no').value = "";
+            document.getElementById('qty-input').value = "";
         }
 
         function resetUser() {
-            if(confirm("Reset user selection?")) {
+            if(confirm("Change user selection?")) {
                 localStorage.removeItem('smt_operator_fixed');
                 location.reload();
             }
+        }
+
+        function msg(t, c) {
+            const s = document.getElementById('status');
+            s.innerText = t; s.style.color = c;
         }
     </script>
 </body>
