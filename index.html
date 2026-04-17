@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMT Tracker Pro</title>
+    <title>SMT Production Tracker</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
@@ -18,7 +18,8 @@
         label { font-size: 0.7rem; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f1f5f9; color: #1e293b; outline: none; }
         
-        #qty-input, #process-input, #box-no { background: #ffffff; border: 1px solid #cbd5e1; }
+        /* Editable Fields with White Background */
+        #qty-input, #process-input, #box-no, .white-bg { background: #ffffff; border: 1px solid #cbd5e1; }
         #qty-input { border: 2px solid var(--primary); }
         input[readonly] { color: #64748b; }
 
@@ -56,12 +57,37 @@
             <div id="reader"></div>
 
             <div class="form-grid">
+                
                 <div class="group full">
-                    <label>Process (Type or Scan OQC)</label>
+                    <label>Box No. (Scan PCBA-)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="box-no" placeholder="...">
+                        <button type="button" class="scan-btn" onclick="resumeScanner('box-no')">📷</button>
+                    </div>
+                </div>
+
+                <div class="group full">
+                    <label>Process (Scan OQC)</label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="process-input" placeholder="...">
                         <button type="button" class="scan-btn" onclick="resumeScanner('process-input')">📷</button>
                     </div>
+                </div>
+
+                <div class="group">
+                    <label>Action</label>
+                    <select id="action-type" class="white-bg">
+                        <option value="Register">Register</option>
+                        <option value="Confirm">Confirm</option>
+                    </select>
+                </div>
+
+                <div class="group">
+                    <label>Type</label>
+                    <select id="io-type" class="white-bg">
+                        <option value="IN">IN</option>
+                        <option value="OUT">OUT</option>
+                    </select>
                 </div>
 
                 <div class="group full">
@@ -78,15 +104,7 @@
                 </div>
 
                 <div class="group full">
-                    <label>Box No. (Type or Scan PCBA-)</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="box-no" placeholder="...">
-                        <button type="button" class="scan-btn" onclick="resumeScanner('box-no')">📷</button>
-                    </div>
-                </div>
-
-                <div class="group full">
-                    <label style="color: var(--primary);">Quantity (Manual)</label>
+                    <label style="color: var(--primary);">Quantity (Manual Input)</label>
                     <input type="number" id="qty-input" placeholder="0">
                 </div>
             </div>
@@ -96,17 +114,18 @@
 
         <div class="history">
             <table id="history-table">
-                <thead><tr><th>Type</th><th>Model</th><th>Qty</th></tr></thead>
+                <thead><tr><th>Action</th><th>Model</th><th>Q'ty</th></tr></thead>
                 <tbody id="history-body"></tbody>
             </table>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_wLIhSVlVcCV99Uck7PmAtwt2VbxhmOR0-jeDxbKqUEROtpPfyBcpwYb_m1YkypMQRg/exec"; 
+        // PASTE YOUR GOOGLE WEB APP URL BELOW
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjag_tmrl6vZNkzTn41CgsJN5_sMwb8KpfYZQ9SVm_yROGPLUSWrh_DR8iXWRQhuWSUw/exec"; 
 
-        let activeUser = localStorage.getItem('smt_op_v3');
-        let localHistory = JSON.parse(localStorage.getItem('smt_hist_v3')) || [];
+        let activeUser = localStorage.getItem('smt_op_v4');
+        let localHistory = JSON.parse(localStorage.getItem('smt_hist_v4')) || [];
         let lastTarget = null;
         
         const scanner = new Html5QrcodeScanner("reader", { 
@@ -126,8 +145,8 @@
 
         function saveUser() {
             const val = document.getElementById('user-select-list').value;
-            if (!val) return alert("Select User");
-            localStorage.setItem('smt_op_v3', val);
+            if (!val) return alert("Please select a User ID");
+            localStorage.setItem('smt_op_v4', val);
             activeUser = val;
             showApp();
         }
@@ -144,72 +163,73 @@
             scanner.pause(true); 
             const p = text.split(',');
             
-            // 1. AUTO-DETECT PROCESS (OQC)
+            // Auto-Detect OQC for Process
             if (text.toUpperCase().includes("OQC")) {
                 document.getElementById('process-input').value = text.trim();
-                msg("✔ Process Set: OQC", "#10b981");
-                scanner.resume(); // Auto-resume for next scan
+                msg("✔ Process Updated", "#10b981");
+                scanner.resume();
             }
-            // 2. AUTO-DETECT BOX NO (PCBA-)
+            // Auto-Detect PCBA- for Box No
             else if (text.toUpperCase().includes("PCBA-")) {
                 document.getElementById('box-no').value = text.trim();
-                msg("✔ Box No Set: PCBA", "#10b981");
-                scanner.resume(); // Auto-resume for next scan
+                msg("✔ Box No Updated", "#10b981");
+                scanner.resume();
             }
-            // 3. MODEL DATA (3-PART OR 4-PART)
+            // Model Data (Comma separated)
             else if (p.length >= 3) {
                 document.getElementById('model-name').value = p[0].trim();
                 document.getElementById('side-id').value = p[1].trim();
                 document.getElementById('location-id').value = p[2].trim();
-                if(p.length >= 4) document.getElementById('box-no').value = p[3].trim();
                 document.getElementById('qty-input').focus();
                 msg("✔ Model Scanned", "#3b82f6");
             } 
-            // 4. MANUAL TARGETED SCAN
+            // Manual Button Scans
             else if (lastTarget) {
                 document.getElementById(lastTarget).value = text.trim();
                 msg("✔ Field Updated", "#3b82f6");
             }
             else {
-                msg("⚠ Unknown QR: " + text, "orange");
+                msg("⚠ Scanned: " + text, "orange");
                 scanner.resume();
             }
         }
 
         function resumeScanner(targetId) {
             lastTarget = targetId;
-            msg("Scan for " + targetId.split('-')[0] + "...", "orange");
+            msg("Scanner Active...", "orange");
             scanner.resume();
         }
 
         function submitData() {
+            const box = document.getElementById('box-no').value;
             const process = document.getElementById('process-input').value;
+            const action = document.getElementById('action-type').value;
+            const type = document.getElementById('io-type').value;
             const model = document.getElementById('model-name').value;
             const side = document.getElementById('side-id').value;
             const loc = document.getElementById('location-id').value;
-            const box = document.getElementById('box-no').value;
             const qty = document.getElementById('qty-input').value;
 
-            if (!model || !qty) return alert("Scan Model and enter Q'ty!");
+            if (!model || !qty) return alert("Please scan a model and enter quantity!");
 
             msg("Saving...", "orange");
             document.getElementById('submit-btn').disabled = true;
 
-            localHistory.unshift({ process, model, qty });
-            localStorage.setItem('smt_hist_v3', JSON.stringify(localHistory.slice(0, 5)));
+            localHistory.unshift({ action, model, qty });
+            localStorage.setItem('smt_hist_v4', JSON.stringify(localHistory.slice(0, 5)));
             updateTableUI();
 
             fetch(SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
-                body: JSON.stringify({ user: activeUser, process, model, side, loc, box, qty })
+                body: JSON.stringify({ user: activeUser, box, process, action, type, model, side, loc, qty })
             })
             .then(() => {
                 msg("✔ Record Saved", "#10b981");
                 resetForm();
                 scanner.resume(); 
             })
-            .catch(() => msg("❌ Error", "red"))
+            .catch(() => msg("❌ Network Error", "red"))
             .finally(() => document.getElementById('submit-btn').disabled = false);
         }
 
@@ -223,7 +243,7 @@
         function updateTableUI() {
             const body = document.getElementById('history-body');
             body.innerHTML = localHistory.slice(0, 5).map(h => `
-                <tr><td>${h.process}</td><td>${h.model}</td><td><b>${h.qty}</b></td></tr>
+                <tr><td>${h.action}</td><td>${h.model}</td><td><b>${h.qty}</b></td></tr>
             `).join('');
         }
 
@@ -233,8 +253,8 @@
         }
 
         function resetUser() {
-            if(confirm("Change Operator?")) {
-                localStorage.removeItem('smt_op_v3');
+            if(confirm("Change Operator ID?")) {
+                localStorage.removeItem('smt_op_v4');
                 location.reload();
             }
         }
