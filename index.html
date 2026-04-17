@@ -3,125 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMT Production Tracker</title>
+    <title>SMT TRACKER PRO</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px; box-sizing: border-box; }
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 15px; min-height: 250px; }
-        .hidden { display: none !important; }
-        
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .full { grid-column: span 2; }
-        .group { display: flex; flex-direction: column; }
-        label { font-size: 0.7rem; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f1f5f9; color: #1e293b; outline: none; }
-        
-        #qty-input, #process-input, #box-no, .white-bg { background: #ffffff; border: 1px solid #cbd5e1; }
-        #qty-input { border: 2px solid var(--primary); }
-        input[readonly] { color: #64748b; }
+        :root {
+            --neon-blue: #00d2ff;
+            --neon-green: #39ff14;
+            --dark-bg: #0f172a;
+            --glass: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
 
-        .scan-btn { padding: 0 15px; border-radius: 8px; border: 1px solid #cbd5e1; background: #e2e8f0; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
-        .btn-submit { background: var(--primary); color: white; width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        
-        .status { text-align: center; height: 25px; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; }
-        .user-tag { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; width: 100%; max-width: 480px; }
-        
-        /* IMPROVED HISTORY TABLE */
-        .history { width: 100%; max-width: 480px; margin-top: 20px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; font-size: 0.65rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
-        th { background: #f1f5f9; color: #64748b; text-transform: uppercase; }
-        .bold { font-weight: bold; color: var(--primary); }
+        body {
+            margin: 0; padding: 15px;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Modern Header */
+        .header {
+            width: 100%; max-width: 500px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem; letter-spacing: 2px;
+            margin: 0; color: var(--neon-blue);
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+
+        .user-pill {
+            background: var(--glass);
+            padding: 6px 12px; border-radius: 20px;
+            font-size: 0.8rem; border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Main Card */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 24px;
+            width: 100%; max-width: 480px;
+            box-sizing: border-box;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        #reader {
+            width: 100%; border-radius: 16px; overflow: hidden;
+            border: 2px solid var(--card-border);
+            margin-bottom: 20px; background: #000;
+        }
+
+        /* Form Styling */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .span-2 { grid-column: span 2; }
+
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        label { font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+
+        input, select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px; color: white;
+            font-size: 0.95rem; transition: 0.3s;
+        }
+
+        input:focus { border-color: var(--neon-blue); outline: none; background: rgba(255, 255, 255, 0.1); }
+        input[readonly] { color: #64748b; background: transparent; cursor: not-allowed; }
+
+        /* Scanner Button */
+        .scan-trigger {
+            background: #334155; border: none; border-radius: 10px;
+            padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .scan-trigger:active { background: var(--neon-blue); }
+
+        /* Action Buttons */
+        .submit-btn {
+            background: linear-gradient(135deg, #2563eb, #00d2ff);
+            color: white; border: none; border-radius: 14px;
+            padding: 18px; width: 100%; font-weight: bold;
+            font-size: 1rem; margin-top: 25px; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* History Table */
+        .history-section {
+            width: 100%; max-width: 500px; margin-top: 30px;
+        }
+        .history-table {
+            width: 100%; border-collapse: separate; border-spacing: 0 8px;
+            font-size: 0.75rem;
+        }
+        .history-table th { padding: 10px; color: #94a3b8; text-align: left; font-weight: normal; }
+        .history-table tr { background: rgba(255,255,255,0.03); transition: 0.2s; }
+        .history-table td { padding: 12px 10px; border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
+        .history-table tr td:first-child { border-left: 1px solid var(--card-border); border-radius: 12px 0 0 12px; }
+        .history-table tr td:last-child { border-right: 1px solid var(--card-border); border-radius: 0 12px 12px 0; }
+
+        /* Neon Status */
+        .status-bar { font-size: 0.8rem; text-align: center; margin-bottom: 10px; font-weight: bold; }
+        .dot { height: 8px; width: 8px; background-color: var(--neon-green); border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px var(--neon-green); }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="setup-screen" class="card hidden">
-        <h2 style="text-align:center; margin-top:0;">Operator Setup</h2>
-        <select id="user-select-list" style="width:100%; margin-bottom:20px; background: white;">
-            <option value="">-- Choose User --</option>
-        </select>
-        <button class="btn-submit" onclick="saveUser()">CONFIRM & START</button>
+    <div id="setup-screen" class="glass-card hidden">
+        <h2 style="text-align:center; font-family: 'Orbitron';">CORE ACCESS</h2>
+        <div class="input-group">
+            <label>Operator Auth</label>
+            <select id="user-select-list" style="width:100%; margin-bottom:20px;"></select>
+        </div>
+        <button class="submit-btn" onclick="saveUser()">INITIALIZE SYSTEM</button>
     </div>
 
-    <div id="main-screen" class="hidden" style="width:100%; max-width:480px;">
-        <div class="user-tag">
-            <span>Operator: <b id="display-user" style="color:var(--primary)"></b></span>
-            <span onclick="resetUser()" style="color:#94a3b8; cursor:pointer; text-decoration:underline;">Change User</span>
+    <div id="main-screen" class="hidden" style="width:100%; max-width:500px;">
+        <div class="header">
+            <h1>SMT PRO</h1>
+            <div class="user-pill">OP: <span id="display-user" style="color:var(--neon-blue); font-weight:bold;"></span> <span onclick="resetUser()" style="margin-left:10px; cursor:pointer; color:#ef4444;">×</span></div>
         </div>
 
-        <div class="card">
-            <div id="status" class="status">Ready</div>
+        <div class="glass-card">
+            <div id="status" class="status-bar"><span class="dot"></span>Ready to Scan</div>
             <div id="reader"></div>
 
-            <div class="form-grid">
-                <div class="group full">
-                    <label>Box No.</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="box-no" placeholder="...">
-                        <button type="button" class="scan-btn" onclick="resumeScanner('box-no')">📷</button>
+            <div class="grid">
+                <div class="input-group span-2">
+                    <label>Box ID</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="box-no" placeholder="PCBA-..." style="flex:1">
+                        <button class="scan-trigger" onclick="resumeScanner('box-no')">📷</button>
                     </div>
                 </div>
 
-                <div class="group full">
+                <div class="input-group span-2">
                     <label>Process</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="process-input" placeholder="...">
-                        <button type="button" class="scan-btn" onclick="resumeScanner('process-input')">📷</button>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="process-input" placeholder="OQC..." style="flex:1">
+                        <button class="scan-trigger" onclick="resumeScanner('process-input')">📷</button>
                     </div>
                 </div>
 
-                <div class="group">
+                <div class="input-group">
                     <label>Action</label>
-                    <select id="action-type" class="white-bg">
+                    <select id="action-type">
                         <option value="Register">Register</option>
                         <option value="Confirm">Confirm</option>
                     </select>
                 </div>
 
-                <div class="group">
+                <div class="input-group">
                     <label>Type</label>
-                    <select id="io-type" class="white-bg">
+                    <select id="io-type">
                         <option value="IN">IN</option>
                         <option value="OUT">OUT</option>
                     </select>
                 </div>
 
-                <div class="group full">
-                    <label>Model Name</label>
-                    <input type="text" id="model-name" readonly>
+                <div class="input-group span-2">
+                    <label>Model Info</label>
+                    <input type="text" id="model-name" readonly placeholder="Waiting for model scan...">
                 </div>
-                <div class="group">
+
+                <div class="input-group">
                     <label>Side</label>
                     <input type="text" id="side-id" readonly>
                 </div>
-                <div class="group">
+
+                <div class="input-group">
                     <label>Location</label>
                     <input type="text" id="location-id" readonly>
                 </div>
 
-                <div class="group full">
-                    <label style="color: var(--primary);">Quantity</label>
-                    <input type="number" id="qty-input" placeholder="0">
+                <div class="input-group span-2">
+                    <label style="color:var(--neon-blue)">Quantity</label>
+                    <input type="number" id="qty-input" placeholder="Enter Amount" style="font-weight:bold; font-size:1.2rem; border-color:var(--neon-blue)">
                 </div>
             </div>
 
-            <button class="btn-submit" id="submit-btn" onclick="submitData()">SUBMIT TO RECORD</button>
+            <button class="submit-btn" id="submit-btn" onclick="submitData()">TRANSMIT DATA</button>
         </div>
 
-        <div class="history">
-            <table id="history-table">
+        <div class="history-section">
+            <label>Recent Logs</label>
+            <table class="history-table">
                 <thead>
-                    <tr>
-                        <th>Box</th>
-                        <th>Proc</th>
-                        <th>Act</th>
-                        <th>I/O</th>
-                        <th>Model</th>
-                        <th>Qty</th>
-                    </tr>
+                    <tr><th>BOX</th><th>ACT</th><th>MODEL</th><th>QTY</th></tr>
                 </thead>
                 <tbody id="history-body"></tbody>
             </table>
@@ -135,13 +217,13 @@
         let localHistory = JSON.parse(localStorage.getItem('smt_hist_v4')) || [];
         let lastTarget = null;
         
-        const scanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: { width: 250, height: 250 } });
+        const scanner = new Html5QrcodeScanner("reader", { fps: 24, qrbox: { width: 250, height: 250 } });
 
         window.onload = function() {
             const list = document.getElementById('user-select-list');
             for(let i=1; i<=15; i++) {
                 let opt = document.createElement('option');
-                opt.value = "User " + i; opt.innerHTML = "User " + i;
+                opt.value = "User " + i; opt.innerHTML = "ID: USER-00" + i;
                 list.appendChild(opt);
             }
             if (!activeUser) document.getElementById('setup-screen').classList.remove('hidden');
@@ -150,7 +232,7 @@
 
         function saveUser() {
             const val = document.getElementById('user-select-list').value;
-            if (!val) return alert("Select User");
+            if (!val) return;
             localStorage.setItem('smt_op_v4', val);
             activeUser = val;
             showApp();
@@ -169,27 +251,27 @@
             const p = text.split(',');
             if (text.toUpperCase().includes("OQC")) {
                 document.getElementById('process-input').value = text.trim();
-                msg("✔ Process Set", "#10b981"); scanner.resume();
+                msg("✔ PROCESS DETECTED", "#39ff14"); scanner.resume();
             } else if (text.toUpperCase().includes("PCBA-")) {
                 document.getElementById('box-no').value = text.trim();
-                msg("✔ Box No Set", "#10b981"); scanner.resume();
+                msg("✔ BOX DETECTED", "#39ff14"); scanner.resume();
             } else if (p.length >= 3) {
                 document.getElementById('model-name').value = p[0].trim();
                 document.getElementById('side-id').value = p[1].trim();
                 document.getElementById('location-id').value = p[2].trim();
                 document.getElementById('qty-input').focus();
-                msg("✔ Model Scanned", "#3b82f6");
+                msg("✔ MODEL SYNCED", "#00d2ff");
             } else if (lastTarget) {
                 document.getElementById(lastTarget).value = text.trim();
-                msg("✔ Updated", "#3b82f6");
+                msg("✔ DATA UPDATED", "#00d2ff");
             } else {
-                msg("⚠ Scanned: " + text, "orange"); scanner.resume();
+                msg("⚠ UNKNOWN DATA", "#f59e0b"); scanner.resume();
             }
         }
 
         function resumeScanner(targetId) {
             lastTarget = targetId;
-            msg("Scanner Active...", "orange");
+            msg("AWAITING SCAN...", "#00d2ff");
             scanner.resume();
         }
 
@@ -203,27 +285,24 @@
             const loc = document.getElementById('location-id').value;
             const qty = document.getElementById('qty-input').value;
 
-            if (!model || !qty) return alert("Missing Model or Qty!");
+            if (!model || !qty) return alert("MISSING CORE DATA");
 
-            msg("Saving...", "orange");
+            msg("TRANSMITTING...", "#00d2ff");
             document.getElementById('submit-btn').disabled = true;
 
-            // SAVE ALL DATA TO LOCAL HISTORY
-            localHistory.unshift({ box, process, action, type, model, qty });
-            localStorage.setItem('smt_hist_v4', JSON.stringify(localHistory.slice(0, 10)));
+            localHistory.unshift({ box, action, model, qty });
+            localStorage.setItem('smt_hist_v4', JSON.stringify(localHistory.slice(0, 5)));
             updateTableUI();
 
             fetch(SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
+                method: "POST", mode: "no-cors",
                 body: JSON.stringify({ user: activeUser, box, process, action, type, model, side, loc, qty })
             })
             .then(() => {
-                msg("✔ Record Saved", "#10b981");
-                resetForm();
-                scanner.resume(); 
+                msg("✔ UPLOAD COMPLETE", "#39ff14");
+                resetForm(); scanner.resume(); 
             })
-            .catch(() => msg("❌ Error", "red"))
+            .catch(() => msg("❌ TRANSMISSION ERROR", "#ef4444"))
             .finally(() => document.getElementById('submit-btn').disabled = false);
         }
 
@@ -236,25 +315,24 @@
 
         function updateTableUI() {
             const body = document.getElementById('history-body');
-            body.innerHTML = localHistory.slice(0, 10).map(h => `
+            body.innerHTML = localHistory.slice(0, 5).map(h => `
                 <tr>
-                    <td>${h.box || '-'}</td>
-                    <td>${h.process || '-'}</td>
-                    <td>${h.action}</td>
-                    <td>${h.type}</td>
+                    <td style="color:#94a3b8">${h.box || '-'}</td>
+                    <td style="font-weight:bold">${h.action}</td>
                     <td>${h.model}</td>
-                    <td class="bold">${h.qty}</td>
+                    <td style="color:var(--neon-blue); font-weight:bold;">${h.qty}</td>
                 </tr>
             `).join('');
         }
 
         function msg(t, c) {
             const s = document.getElementById('status');
-            s.innerText = t; s.style.color = c;
+            s.innerHTML = `<span class="dot" style="background:${c}; box-shadow: 0 0 8px ${c}"></span>${t}`;
+            s.style.color = c;
         }
 
         function resetUser() {
-            if(confirm("Change Operator?")) {
+            if(confirm("TERMINATE SESSION?")) {
                 localStorage.removeItem('smt_op_v4');
                 location.reload();
             }
