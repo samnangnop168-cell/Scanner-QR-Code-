@@ -18,7 +18,6 @@
         label { font-size: 0.7rem; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f1f5f9; color: #1e293b; outline: none; }
         
-        /* Editable Fields with White Background */
         #qty-input, #process-input, #box-no { background: #ffffff; border: 1px solid #cbd5e1; }
         #qty-input { border: 2px solid var(--primary); }
         input[readonly] { color: #64748b; }
@@ -58,7 +57,7 @@
 
             <div class="form-grid">
                 <div class="group full">
-                    <label>Process (Type or Scan)</label>
+                    <label>Process (Type or Scan OQC)</label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="process-input" placeholder="...">
                         <button type="button" class="scan-btn" onclick="resumeScanner('process-input')">📷</button>
@@ -79,7 +78,7 @@
                 </div>
 
                 <div class="group full">
-                    <label>Box No. (Type or Scan)</label>
+                    <label>Box No. (Type or Scan PCBA-)</label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="box-no" placeholder="...">
                         <button type="button" class="scan-btn" onclick="resumeScanner('box-no')">📷</button>
@@ -104,7 +103,6 @@
     </div>
 
     <script>
-        // REPLACE WITH YOUR APPS SCRIPT WEB APP URL
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_wLIhSVlVcCV99Uck7PmAtwt2VbxhmOR0-jeDxbKqUEROtpPfyBcpwYb_m1YkypMQRg/exec"; 
 
         let activeUser = localStorage.getItem('smt_op_v3');
@@ -146,22 +144,35 @@
             scanner.pause(true); 
             const p = text.split(',');
             
-            if (p.length >= 4) {
-                // Handle split-comma QR codes
+            // 1. AUTO-DETECT PROCESS (OQC)
+            if (text.toUpperCase().includes("OQC")) {
+                document.getElementById('process-input').value = text.trim();
+                msg("✔ Process Set: OQC", "#10b981");
+                scanner.resume(); // Auto-resume for next scan
+            }
+            // 2. AUTO-DETECT BOX NO (PCBA-)
+            else if (text.toUpperCase().includes("PCBA-")) {
+                document.getElementById('box-no').value = text.trim();
+                msg("✔ Box No Set: PCBA", "#10b981");
+                scanner.resume(); // Auto-resume for next scan
+            }
+            // 3. MODEL DATA (3-PART OR 4-PART)
+            else if (p.length >= 3) {
                 document.getElementById('model-name').value = p[0].trim();
                 document.getElementById('side-id').value = p[1].trim();
                 document.getElementById('location-id').value = p[2].trim();
-                document.getElementById('box-no').value = p[3].trim();
+                if(p.length >= 4) document.getElementById('box-no').value = p[3].trim();
                 document.getElementById('qty-input').focus();
                 msg("✔ Model Scanned", "#3b82f6");
-            } else {
-                // Handle individual scan for Process or Box No
-                if (lastTarget) {
-                    document.getElementById(lastTarget).value = text.trim();
-                    msg("✔ " + lastTarget.split('-')[0].toUpperCase() + " Updated", "#3b82f6");
-                } else {
-                    msg("⚠ Scanned: " + text, "orange");
-                }
+            } 
+            // 4. MANUAL TARGETED SCAN
+            else if (lastTarget) {
+                document.getElementById(lastTarget).value = text.trim();
+                msg("✔ Field Updated", "#3b82f6");
+            }
+            else {
+                msg("⚠ Unknown QR: " + text, "orange");
+                scanner.resume();
             }
         }
 
@@ -198,7 +209,7 @@
                 resetForm();
                 scanner.resume(); 
             })
-            .catch(() => msg("❌ Network Error", "red"))
+            .catch(() => msg("❌ Error", "red"))
             .finally(() => document.getElementById('submit-btn').disabled = false);
         }
 
