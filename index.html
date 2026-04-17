@@ -3,22 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMT Production Tracker</title>
+    <title>SMT Tracker Pro</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px; box-sizing: border-box; }
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 15px; }
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 15px; min-height: 250px; }
         .hidden { display: none !important; }
         
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .full { grid-column: span 2; }
         .group { display: flex; flex-direction: column; }
-        label { font-size: 0.75rem; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f1f5f9; color: #1e293b; }
-        #qty-input { border: 2px solid var(--primary); background: #ffffff; }
+        label { font-size: 0.7rem; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
+        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f1f5f9; color: #1e293b; outline: none; }
+        
+        /* Editable Fields with White Background */
+        #qty-input, #process-input, #box-no { background: #ffffff; border: 1px solid #cbd5e1; }
+        #qty-input { border: 2px solid var(--primary); }
+        input[readonly] { color: #64748b; }
 
+        .scan-btn { padding: 0 15px; border-radius: 8px; border: 1px solid #cbd5e1; background: #e2e8f0; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
         .btn-submit { background: var(--primary); color: white; width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; margin-top: 20px; cursor: pointer; }
         .btn-submit:active { transform: scale(0.98); background: #1d4ed8; }
         
@@ -26,20 +31,16 @@
         .user-tag { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; width: 100%; max-width: 450px; }
         
         .history { width: 100%; max-width: 450px; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; font-size: 0.75rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; font-size: 0.7rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #f1f5f9; }
         th { background: #f1f5f9; color: #64748b; }
-        .badge { padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.65rem; }
-        .reg { background: #dcfce7; color: #166534; }
-        .conf { background: #dbeafe; color: #1e40af; }
     </style>
 </head>
 <body>
 
     <div id="setup-screen" class="card hidden">
-        <h2 style="text-align:center; margin-top:0;">Select Operator</h2>
-        <p style="text-align:center; font-size:0.8rem; color:#64748b;">Device will remember this selection.</p>
-        <select id="user-select-list">
+        <h2 style="text-align:center; margin-top:0;">Operator Setup</h2>
+        <select id="user-select-list" style="width:100%; margin-bottom:20px; background: white;">
             <option value="">-- Choose User --</option>
         </select>
         <button class="btn-submit" onclick="saveUser()">CONFIRM & START</button>
@@ -52,18 +53,18 @@
         </div>
 
         <div class="card">
-            <h3 style="margin: 0 0 15px 0; text-align: center;">Production Entry</h3>
-            <div id="status" class="status"></div>
+            <div id="status" class="status">Ready</div>
             <div id="reader"></div>
 
             <div class="form-grid">
                 <div class="group full">
-                    <label>Process Type</label>
-                    <select id="process-select">
-                        <option value="Register">Register</option>
-                        <option value="Confirm">Confirm</option>
-                    </select>
+                    <label>Process (Type or Scan)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="process-input" placeholder="...">
+                        <button type="button" class="scan-btn" onclick="resumeScanner('process-input')">📷</button>
+                    </div>
                 </div>
+
                 <div class="group full">
                     <label>Model Name</label>
                     <input type="text" id="model-name" readonly placeholder="Waiting for scan...">
@@ -73,16 +74,21 @@
                     <input type="text" id="side-id" readonly>
                 </div>
                 <div class="group">
-                    <label>Location ID</label>
+                    <label>Location</label>
                     <input type="text" id="location-id" readonly>
                 </div>
+
                 <div class="group full">
-                    <label>Box No.</label>
-                    <input type="text" id="box-no" readonly>
+                    <label>Box No. (Type or Scan)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="box-no" placeholder="...">
+                        <button type="button" class="scan-btn" onclick="resumeScanner('box-no')">📷</button>
+                    </div>
                 </div>
+
                 <div class="group full">
                     <label style="color: var(--primary);">Quantity (Manual)</label>
-                    <input type="number" id="qty-input" placeholder="Enter amount...">
+                    <input type="number" id="qty-input" placeholder="0">
                 </div>
             </div>
 
@@ -90,48 +96,41 @@
         </div>
 
         <div class="history">
-            <h4 style="margin: 10px 0;">Local History</h4>
             <table id="history-table">
-                <thead>
-                    <tr><th>Type</th><th>Model</th><th>Loc</th><th>Q'ty</th></tr>
-                </thead>
+                <thead><tr><th>Type</th><th>Model</th><th>Qty</th></tr></thead>
                 <tbody id="history-body"></tbody>
             </table>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzBEFwssaXYS1zppuefyY4IvYAjLUZfBxKUpGs0gYDeHk4ihNKgeO7ZShyUVHuJGCbSHQ/exec"; // PASTE YOUR URL HERE
+        // REPLACE WITH YOUR APPS SCRIPT WEB APP URL
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_wLIhSVlVcCV99Uck7PmAtwt2VbxhmOR0-jeDxbKqUEROtpPfyBcpwYb_m1YkypMQRg/exec"; 
 
-        let activeUser = localStorage.getItem('smt_operator_fixed');
-        let localHistory = JSON.parse(localStorage.getItem('smt_local_v1')) || [];
+        let activeUser = localStorage.getItem('smt_op_v3');
+        let localHistory = JSON.parse(localStorage.getItem('smt_hist_v3')) || [];
+        let lastTarget = null;
         
         const scanner = new Html5QrcodeScanner("reader", { 
-            fps: 15, qrbox: { width: 250, height: 250 } 
+            fps: 20, qrbox: { width: 250, height: 250 } 
         });
 
         window.onload = function() {
-            // Fill User List 1-15
             const list = document.getElementById('user-select-list');
             for(let i=1; i<=15; i++) {
                 let opt = document.createElement('option');
-                opt.value = "User " + i;
-                opt.innerHTML = "User " + i;
+                opt.value = "User " + i; opt.innerHTML = "User " + i;
                 list.appendChild(opt);
             }
-
-            if (!activeUser) {
-                document.getElementById('setup-screen').classList.remove('hidden');
-            } else {
-                showApp();
-            }
+            if (!activeUser) document.getElementById('setup-screen').classList.remove('hidden');
+            else showApp();
         };
 
         function saveUser() {
-            const selected = document.getElementById('user-select-list').value;
-            if (!selected) return alert("Please select a User ID");
-            localStorage.setItem('smt_operator_fixed', selected);
-            activeUser = selected;
+            const val = document.getElementById('user-select-list').value;
+            if (!val) return alert("Select User");
+            localStorage.setItem('smt_op_v3', val);
+            activeUser = val;
             showApp();
         }
 
@@ -146,38 +145,49 @@
         function onScanSuccess(text) {
             scanner.pause(true); 
             const p = text.split(',');
+            
             if (p.length >= 4) {
+                // Handle split-comma QR codes
                 document.getElementById('model-name').value = p[0].trim();
                 document.getElementById('side-id').value = p[1].trim();
                 document.getElementById('location-id').value = p[2].trim();
                 document.getElementById('box-no').value = p[3].trim();
                 document.getElementById('qty-input').focus();
-                msg("✔ Scanned. Camera Paused.", "#3b82f6");
+                msg("✔ Model Scanned", "#3b82f6");
             } else {
-                msg("❌ Format Error", "red");
-                scanner.resume();
+                // Handle individual scan for Process or Box No
+                if (lastTarget) {
+                    document.getElementById(lastTarget).value = text.trim();
+                    msg("✔ " + lastTarget.split('-')[0].toUpperCase() + " Updated", "#3b82f6");
+                } else {
+                    msg("⚠ Scanned: " + text, "orange");
+                }
             }
         }
 
+        function resumeScanner(targetId) {
+            lastTarget = targetId;
+            msg("Scan for " + targetId.split('-')[0] + "...", "orange");
+            scanner.resume();
+        }
+
         function submitData() {
-            const process = document.getElementById('process-select').value;
+            const process = document.getElementById('process-input').value;
             const model = document.getElementById('model-name').value;
             const side = document.getElementById('side-id').value;
             const loc = document.getElementById('location-id').value;
             const box = document.getElementById('box-no').value;
             const qty = document.getElementById('qty-input').value;
 
-            if (!model || !qty) return alert("Please scan QR and enter Q'ty!");
+            if (!model || !qty) return alert("Scan Model and enter Q'ty!");
 
             msg("Saving...", "orange");
             document.getElementById('submit-btn').disabled = true;
 
-            // Local Update
-            localHistory.unshift({ process, model, loc, qty });
-            localStorage.setItem('smt_local_v1', JSON.stringify(localHistory.slice(0, 10)));
+            localHistory.unshift({ process, model, qty });
+            localStorage.setItem('smt_hist_v3', JSON.stringify(localHistory.slice(0, 5)));
             updateTableUI();
 
-            // Send to Google Sheets (Added the 'user' field)
             fetch(SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -188,40 +198,34 @@
                 resetForm();
                 scanner.resume(); 
             })
-            .catch(() => msg("❌ Error Saving", "red"))
+            .catch(() => msg("❌ Network Error", "red"))
             .finally(() => document.getElementById('submit-btn').disabled = false);
+        }
+
+        function resetForm() {
+            ['model-name','side-id','location-id','box-no','qty-input'].forEach(id => {
+                document.getElementById(id).value = "";
+            });
+            lastTarget = null;
         }
 
         function updateTableUI() {
             const body = document.getElementById('history-body');
-            body.innerHTML = localHistory.slice(0, 10).map(h => `
-                <tr>
-                    <td><span class="badge ${h.process === 'Register' ? 'reg' : 'conf'}">${h.process}</span></td>
-                    <td>${h.model}</td>
-                    <td>${h.loc}</td>
-                    <td><b>${h.qty}</b></td>
-                </tr>
+            body.innerHTML = localHistory.slice(0, 5).map(h => `
+                <tr><td>${h.process}</td><td>${h.model}</td><td><b>${h.qty}</b></td></tr>
             `).join('');
-        }
-
-        function resetForm() {
-            document.getElementById('model-name').value = "";
-            document.getElementById('side-id').value = "";
-            document.getElementById('location-id').value = "";
-            document.getElementById('box-no').value = "";
-            document.getElementById('qty-input').value = "";
-        }
-
-        function resetUser() {
-            if(confirm("Change user selection?")) {
-                localStorage.removeItem('smt_operator_fixed');
-                location.reload();
-            }
         }
 
         function msg(t, c) {
             const s = document.getElementById('status');
             s.innerText = t; s.style.color = c;
+        }
+
+        function resetUser() {
+            if(confirm("Change Operator?")) {
+                localStorage.removeItem('smt_op_v3');
+                location.reload();
+            }
         }
     </script>
 </body>
