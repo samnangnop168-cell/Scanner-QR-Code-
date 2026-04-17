@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SMT TRACKER PRO</title>
+    <title>SMT TRACKER PRO | AUTH</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
@@ -25,26 +25,20 @@
             overflow-x: hidden;
         }
 
-        /* Responsive Header */
         .header {
             width: 100%; max-width: 480px;
             display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 15px; padding: 0 5px;
+            margin-bottom: 15px;
         }
 
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1rem; letter-spacing: 1px;
-            margin: 0; color: var(--neon-blue);
-        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: var(--neon-blue); margin: 0; }
 
         .user-pill {
             background: var(--glass);
-            padding: 5px 10px; border-radius: 15px;
+            padding: 5px 12px; border-radius: 15px;
             font-size: 0.75rem; border: 1px solid var(--card-border);
         }
 
-        /* Glass Card Container */
         .glass-card {
             background: var(--glass);
             backdrop-filter: blur(10px);
@@ -61,7 +55,6 @@
             margin-bottom: 15px; background: #000;
         }
 
-        /* Responsive Form Grid */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .span-2 { grid-column: span 2; }
 
@@ -76,7 +69,6 @@
             font-size: 0.9rem; width: 100%; box-sizing: border-box;
         }
 
-        input:focus { border-color: var(--neon-blue); outline: none; }
         input[readonly] { color: #64748b; background: rgba(0,0,0,0.2); }
 
         .scan-trigger {
@@ -91,29 +83,19 @@
             font-size: 1rem; margin-top: 20px; cursor: pointer;
         }
 
-        /* SCROLLABLE HISTORY TABLE */
         .history-container {
             width: 100%; max-width: 480px; margin-top: 20px;
-            overflow-x: auto; /* This allows swiping left/right on phone */
+            overflow-x: auto;
             background: var(--glass);
-            border-radius: 15px;
-            border: 1px solid var(--card-border);
+            border-radius: 15px; border: 1px solid var(--card-border);
         }
 
         .history-table {
-            width: 100%; border-collapse: collapse;
-            font-size: 0.65rem; min-width: 600px; /* Forces enough width for all data */
+            width: 100%; border-collapse: collapse; font-size: 0.65rem; min-width: 600px;
         }
 
-        .history-table th { 
-            padding: 10px; color: #94a3b8; text-align: left; 
-            background: rgba(255,255,255,0.05);
-        }
-        
-        .history-table td { 
-            padding: 10px; border-top: 1px solid var(--card-border); 
-            color: #e2e8f0;
-        }
+        .history-table th, .history-table td { padding: 10px; text-align: left; color: #e2e8f0; }
+        .history-table tr { border-top: 1px solid var(--card-border); }
 
         .status-bar { font-size: 0.75rem; text-align: center; margin-bottom: 10px; }
         .dot { height: 7px; width: 7px; background-color: var(--neon-green); border-radius: 50%; display: inline-block; margin-right: 5px; }
@@ -123,23 +105,23 @@
 </head>
 <body>
 
-    <div id="setup-screen" class="glass-card hidden">
-        <h2 style="text-align:center; font-family: 'Orbitron'; font-size: 1.2rem;">SYSTEM ACCESS</h2>
-        <div class="input-group">
-            <label>Select Operator</label>
-            <select id="user-select-list"></select>
-        </div>
-        <button class="submit-btn" onclick="saveUser()">INITIALIZE</button>
+    <div id="setup-screen" class="glass-card">
+        <h2 style="text-align:center; font-family: 'Orbitron'; font-size: 1rem; color: var(--neon-blue);">SCAN OPERATOR QR</h2>
+        <div id="login-reader" style="width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--card-border); margin-bottom:15px;"></div>
+        <p style="text-align:center; font-size:0.7rem; color:#94a3b8;">Awaiting Auth Key (UserID,Process)...</p>
     </div>
 
     <div id="main-screen" class="hidden" style="width:100%;">
         <div class="header" style="margin: 0 auto 15px auto;">
             <h1>SMT PRO</h1>
-            <div class="user-pill"><span id="display-user"></span> <span onclick="resetUser()" style="color:#ef4444; margin-left:8px;">×</span></div>
+            <div class="user-pill">
+                <span id="display-user"></span> | <span id="display-proc" style="color:var(--neon-green)"></span>
+                <span onclick="resetUser()" style="color:#ef4444; margin-left:10px; cursor:pointer; font-weight:bold;">LOGOUT</span>
+            </div>
         </div>
 
         <div class="glass-card" style="margin: 0 auto;">
-            <div id="status" class="status-bar"><span class="dot"></span>System Ready</div>
+            <div id="status" class="status-bar"><span class="dot"></span>Ready</div>
             <div id="reader"></div>
 
             <div class="grid">
@@ -152,11 +134,8 @@
                 </div>
 
                 <div class="input-group span-2">
-                    <label>Process</label>
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="process-input" placeholder="Scan OQC...">
-                        <button class="scan-trigger" onclick="resumeScanner('process-input')">📷</button>
-                    </div>
+                    <label>Active Process (Auto-filled)</label>
+                    <input type="text" id="process-input" readonly>
                 </div>
 
                 <div class="input-group">
@@ -176,7 +155,7 @@
                 </div>
 
                 <div class="input-group span-2">
-                    <label>Model</label>
+                    <label>Model Info</label>
                     <input type="text" id="model-name" readonly>
                 </div>
 
@@ -196,20 +175,13 @@
                 </div>
             </div>
 
-            <button class="submit-btn" id="submit-btn" onclick="submitData()">SUBMIT RECORD</button>
+            <button class="submit-btn" id="submit-btn" onclick="submitData()">TRANSMIT DATA</button>
         </div>
 
         <div class="history-container" style="margin: 20px auto;">
             <table class="history-table">
                 <thead>
-                    <tr>
-                        <th>Box No</th>
-                        <th>Process</th>
-                        <th>Action</th>
-                        <th>I/O</th>
-                        <th>Model</th>
-                        <th>Qty</th>
-                    </tr>
+                    <tr><th>Box</th><th>Process</th><th>Action</th><th>I/O</th><th>Model</th><th>Qty</th></tr>
                 </thead>
                 <tbody id="history-body"></tbody>
             </table>
@@ -217,73 +189,83 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgiVeUtAe-mBpToqPmxobdd3wNmzKezTdo5qOvX_Cnix2OaLjuV39B8ZHtv5mcB65HIg/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdJURudG5z0ovTqGutiMOCOdTSgyttmENrCfnnlq6HE3-z0n-Nk6yNskEdsR0EMaj5Kg/exec"; 
 
-        let activeUser = localStorage.getItem('smt_op_v4');
-        let localHistory = JSON.parse(localStorage.getItem('smt_hist_v4')) || [];
+        let activeUser = localStorage.getItem('smt_op_v5');
+        let activeProc = localStorage.getItem('smt_proc_v5');
+        let localHistory = JSON.parse(localStorage.getItem('smt_hist_v5')) || [];
         let lastTarget = null;
         
-        const scanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: { width: 250, height: 250 } });
+        // Two scanners: one for login, one for production
+        const loginScanner = new Html5QrcodeScanner("login-reader", { fps: 20, qrbox: 250 });
+        const mainScanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: 250 });
 
         window.onload = function() {
-            const list = document.getElementById('user-select-list');
-            for(let i=1; i<=15; i++) {
-                let opt = document.createElement('option');
-                opt.value = "User " + i; opt.innerHTML = "USER " + i;
-                list.appendChild(opt);
+            if (!activeUser) {
+                loginScanner.render(onLoginSuccess);
+            } else {
+                showApp();
             }
-            if (!activeUser) document.getElementById('setup-screen').classList.remove('hidden');
-            else showApp();
         };
 
-        function saveUser() {
-            const val = document.getElementById('user-select-list').value;
-            if (!val) return;
-            localStorage.setItem('smt_op_v4', val);
-            activeUser = val;
-            showApp();
+        function onLoginSuccess(text) {
+            const parts = text.split(',');
+            if (parts.length >= 2) {
+                activeUser = parts[0].trim();
+                activeProc = parts[1].trim();
+                
+                localStorage.setItem('smt_op_v5', activeUser);
+                localStorage.setItem('smt_proc_v5', activeProc);
+                
+                loginScanner.clear();
+                showApp();
+            } else {
+                alert("Invalid Login QR. Format must be: UserID,Process");
+            }
         }
 
         function showApp() {
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('main-screen').classList.remove('hidden');
+            
             document.getElementById('display-user').innerText = activeUser;
+            document.getElementById('display-proc').innerText = activeProc;
+            document.getElementById('process-input').value = activeProc;
+            
             updateTableUI();
-            scanner.render(onScanSuccess);
+            mainScanner.render(onMainScanSuccess);
         }
 
-        function onScanSuccess(text) {
-            scanner.pause(true); 
+        function onMainScanSuccess(text) {
+            mainScanner.pause(true); 
             const p = text.split(',');
-            if (text.toUpperCase().includes("OQC")) {
-                document.getElementById('process-input').value = text.trim();
-                msg("✔ PROCESS OK", "#39ff14"); scanner.resume();
-            } else if (text.toUpperCase().includes("PCBA-")) {
+            
+            if (text.toUpperCase().includes("PCBA-")) {
                 document.getElementById('box-no').value = text.trim();
-                msg("✔ BOX OK", "#39ff14"); scanner.resume();
+                msg("✔ BOX DETECTED", "#39ff14"); mainScanner.resume();
             } else if (p.length >= 3) {
                 document.getElementById('model-name').value = p[0].trim();
                 document.getElementById('side-id').value = p[1].trim();
                 document.getElementById('location-id').value = p[2].trim();
                 document.getElementById('qty-input').focus();
-                msg("✔ MODEL OK", "#00d2ff");
+                msg("✔ MODEL SYNCED", "#00d2ff");
             } else if (lastTarget) {
                 document.getElementById(lastTarget).value = text.trim();
-                msg("✔ UPDATED", "#00d2ff");
+                msg("✔ FIELD UPDATED", "#00d2ff");
             } else {
-                msg("⚠ UNKNOWN", "orange"); scanner.resume();
+                msg("⚠ UNKNOWN QR", "orange"); mainScanner.resume();
             }
         }
 
         function resumeScanner(targetId) {
             lastTarget = targetId;
-            msg("SCANNING...", "#00d2ff");
-            scanner.resume();
+            msg("AWAITING SCAN...", "#00d2ff");
+            mainScanner.resume();
         }
 
         function submitData() {
             const box = document.getElementById('box-no').value;
-            const process = document.getElementById('process-input').value;
+            const process = document.getElementById('process-input').value; // PE stays here
             const action = document.getElementById('action-type').value;
             const type = document.getElementById('io-type').value;
             const model = document.getElementById('model-name').value;
@@ -291,14 +273,13 @@
             const loc = document.getElementById('location-id').value;
             const qty = document.getElementById('qty-input').value;
 
-            if (!model || !qty) return alert("Scan model and enter quantity!");
+            if (!model || !qty) return alert("Missing Model or Qty!");
 
-            msg("SENDING...", "#00d2ff");
+            msg("TRANSMITTING...", "#00d2ff");
             document.getElementById('submit-btn').disabled = true;
 
-            // Push ALL data to history
             localHistory.unshift({ box, process, action, type, model, qty });
-            localStorage.setItem('smt_hist_v4', JSON.stringify(localHistory.slice(0, 10)));
+            localStorage.setItem('smt_hist_v5', JSON.stringify(localHistory.slice(0, 10)));
             updateTableUI();
 
             fetch(SCRIPT_URL, {
@@ -306,17 +287,21 @@
                 body: JSON.stringify({ user: activeUser, box, process, action, type, model, side, loc, qty })
             })
             .then(() => {
-                msg("✔ SAVED", "#39ff14");
-                resetForm(); scanner.resume(); 
+                msg("✔ TRANSMISSION OK", "#39ff14");
+                resetForm(); // Note: Process input is NOT reset inside resetForm() now
+                mainScanner.resume(); 
             })
-            .catch(() => msg("❌ ERROR", "#ef4444"))
+            .catch(() => msg("❌ UPLOAD ERROR", "#ef4444"))
             .finally(() => document.getElementById('submit-btn').disabled = false);
         }
 
         function resetForm() {
+            // We clear everything EXCEPT the process-input
             ['model-name','side-id','location-id','box-no','qty-input'].forEach(id => {
                 document.getElementById(id).value = "";
             });
+            // Keep the process value visible
+            document.getElementById('process-input').value = activeProc;
             lastTarget = null;
         }
 
@@ -325,7 +310,7 @@
             body.innerHTML = localHistory.slice(0, 10).map(h => `
                 <tr>
                     <td>${h.box || '-'}</td>
-                    <td>${h.process || '-'}</td>
+                    <td>${h.process}</td>
                     <td>${h.action}</td>
                     <td>${h.type}</td>
                     <td>${h.model}</td>
@@ -341,8 +326,9 @@
         }
 
         function resetUser() {
-            if(confirm("Logout?")) {
-                localStorage.removeItem('smt_op_v4');
+            if(confirm("Logout and switch Operator?")) {
+                localStorage.removeItem('smt_op_v5');
+                localStorage.removeItem('smt_proc_v5');
                 location.reload();
             }
         }
