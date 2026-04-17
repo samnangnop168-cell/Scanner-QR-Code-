@@ -18,22 +18,22 @@
         label { font-size: 0.7rem; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #f1f5f9; color: #1e293b; outline: none; }
         
-        /* Editable Fields with White Background */
         #qty-input, #process-input, #box-no, .white-bg { background: #ffffff; border: 1px solid #cbd5e1; }
         #qty-input { border: 2px solid var(--primary); }
         input[readonly] { color: #64748b; }
 
         .scan-btn { padding: 0 15px; border-radius: 8px; border: 1px solid #cbd5e1; background: #e2e8f0; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
         .btn-submit { background: var(--primary); color: white; width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        .btn-submit:active { transform: scale(0.98); background: #1d4ed8; }
         
         .status { text-align: center; height: 25px; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; }
-        .user-tag { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; width: 100%; max-width: 450px; }
+        .user-tag { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; width: 100%; max-width: 480px; }
         
-        .history { width: 100%; max-width: 450px; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; font-size: 0.7rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #f1f5f9; }
-        th { background: #f1f5f9; color: #64748b; }
+        /* IMPROVED HISTORY TABLE */
+        .history { width: 100%; max-width: 480px; margin-top: 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; font-size: 0.65rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
+        th { background: #f1f5f9; color: #64748b; text-transform: uppercase; }
+        .bold { font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -46,7 +46,7 @@
         <button class="btn-submit" onclick="saveUser()">CONFIRM & START</button>
     </div>
 
-    <div id="main-screen" class="hidden" style="width:100%; max-width:450px;">
+    <div id="main-screen" class="hidden" style="width:100%; max-width:480px;">
         <div class="user-tag">
             <span>Operator: <b id="display-user" style="color:var(--primary)"></b></span>
             <span onclick="resetUser()" style="color:#94a3b8; cursor:pointer; text-decoration:underline;">Change User</span>
@@ -57,9 +57,8 @@
             <div id="reader"></div>
 
             <div class="form-grid">
-                
                 <div class="group full">
-                    <label>Box No. (Scan PCBA-)</label>
+                    <label>Box No.</label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="box-no" placeholder="...">
                         <button type="button" class="scan-btn" onclick="resumeScanner('box-no')">📷</button>
@@ -67,7 +66,7 @@
                 </div>
 
                 <div class="group full">
-                    <label>Process (Scan OQC)</label>
+                    <label>Process</label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="process-input" placeholder="...">
                         <button type="button" class="scan-btn" onclick="resumeScanner('process-input')">📷</button>
@@ -92,7 +91,7 @@
 
                 <div class="group full">
                     <label>Model Name</label>
-                    <input type="text" id="model-name" readonly placeholder="Waiting for scan...">
+                    <input type="text" id="model-name" readonly>
                 </div>
                 <div class="group">
                     <label>Side</label>
@@ -104,7 +103,7 @@
                 </div>
 
                 <div class="group full">
-                    <label style="color: var(--primary);">Quantity (Manual Input)</label>
+                    <label style="color: var(--primary);">Quantity</label>
                     <input type="number" id="qty-input" placeholder="0">
                 </div>
             </div>
@@ -114,23 +113,29 @@
 
         <div class="history">
             <table id="history-table">
-                <thead><tr><th>Action</th><th>Model</th><th>Q'ty</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Box</th>
+                        <th>Proc</th>
+                        <th>Act</th>
+                        <th>I/O</th>
+                        <th>Model</th>
+                        <th>Qty</th>
+                    </tr>
+                </thead>
                 <tbody id="history-body"></tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // PASTE YOUR GOOGLE WEB APP URL BELOW
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjag_tmrl6vZNkzTn41CgsJN5_sMwb8KpfYZQ9SVm_yROGPLUSWrh_DR8iXWRQhuWSUw/exec"; 
 
         let activeUser = localStorage.getItem('smt_op_v4');
         let localHistory = JSON.parse(localStorage.getItem('smt_hist_v4')) || [];
         let lastTarget = null;
         
-        const scanner = new Html5QrcodeScanner("reader", { 
-            fps: 20, qrbox: { width: 250, height: 250 } 
-        });
+        const scanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: { width: 250, height: 250 } });
 
         window.onload = function() {
             const list = document.getElementById('user-select-list');
@@ -145,7 +150,7 @@
 
         function saveUser() {
             const val = document.getElementById('user-select-list').value;
-            if (!val) return alert("Please select a User ID");
+            if (!val) return alert("Select User");
             localStorage.setItem('smt_op_v4', val);
             activeUser = val;
             showApp();
@@ -162,35 +167,23 @@
         function onScanSuccess(text) {
             scanner.pause(true); 
             const p = text.split(',');
-            
-            // Auto-Detect OQC for Process
             if (text.toUpperCase().includes("OQC")) {
                 document.getElementById('process-input').value = text.trim();
-                msg("✔ Process Updated", "#10b981");
-                scanner.resume();
-            }
-            // Auto-Detect PCBA- for Box No
-            else if (text.toUpperCase().includes("PCBA-")) {
+                msg("✔ Process Set", "#10b981"); scanner.resume();
+            } else if (text.toUpperCase().includes("PCBA-")) {
                 document.getElementById('box-no').value = text.trim();
-                msg("✔ Box No Updated", "#10b981");
-                scanner.resume();
-            }
-            // Model Data (Comma separated)
-            else if (p.length >= 3) {
+                msg("✔ Box No Set", "#10b981"); scanner.resume();
+            } else if (p.length >= 3) {
                 document.getElementById('model-name').value = p[0].trim();
                 document.getElementById('side-id').value = p[1].trim();
                 document.getElementById('location-id').value = p[2].trim();
                 document.getElementById('qty-input').focus();
                 msg("✔ Model Scanned", "#3b82f6");
-            } 
-            // Manual Button Scans
-            else if (lastTarget) {
+            } else if (lastTarget) {
                 document.getElementById(lastTarget).value = text.trim();
-                msg("✔ Field Updated", "#3b82f6");
-            }
-            else {
-                msg("⚠ Scanned: " + text, "orange");
-                scanner.resume();
+                msg("✔ Updated", "#3b82f6");
+            } else {
+                msg("⚠ Scanned: " + text, "orange"); scanner.resume();
             }
         }
 
@@ -210,13 +203,14 @@
             const loc = document.getElementById('location-id').value;
             const qty = document.getElementById('qty-input').value;
 
-            if (!model || !qty) return alert("Please scan a model and enter quantity!");
+            if (!model || !qty) return alert("Missing Model or Qty!");
 
             msg("Saving...", "orange");
             document.getElementById('submit-btn').disabled = true;
 
-            localHistory.unshift({ action, model, qty });
-            localStorage.setItem('smt_hist_v4', JSON.stringify(localHistory.slice(0, 5)));
+            // SAVE ALL DATA TO LOCAL HISTORY
+            localHistory.unshift({ box, process, action, type, model, qty });
+            localStorage.setItem('smt_hist_v4', JSON.stringify(localHistory.slice(0, 10)));
             updateTableUI();
 
             fetch(SCRIPT_URL, {
@@ -229,7 +223,7 @@
                 resetForm();
                 scanner.resume(); 
             })
-            .catch(() => msg("❌ Network Error", "red"))
+            .catch(() => msg("❌ Error", "red"))
             .finally(() => document.getElementById('submit-btn').disabled = false);
         }
 
@@ -242,8 +236,15 @@
 
         function updateTableUI() {
             const body = document.getElementById('history-body');
-            body.innerHTML = localHistory.slice(0, 5).map(h => `
-                <tr><td>${h.action}</td><td>${h.model}</td><td><b>${h.qty}</b></td></tr>
+            body.innerHTML = localHistory.slice(0, 10).map(h => `
+                <tr>
+                    <td>${h.box || '-'}</td>
+                    <td>${h.process || '-'}</td>
+                    <td>${h.action}</td>
+                    <td>${h.type}</td>
+                    <td>${h.model}</td>
+                    <td class="bold">${h.qty}</td>
+                </tr>
             `).join('');
         }
 
@@ -253,7 +254,7 @@
         }
 
         function resetUser() {
-            if(confirm("Change Operator ID?")) {
+            if(confirm("Change Operator?")) {
                 localStorage.removeItem('smt_op_v4');
                 location.reload();
             }
