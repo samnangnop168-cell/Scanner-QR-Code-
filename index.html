@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SMT TRACKER PRO</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
@@ -11,112 +11,112 @@
             --neon-blue: #00d2ff;
             --neon-green: #39ff14;
             --dark-bg: #0f172a;
-            --glass: rgba(30, 41, 59, 0.7);
+            --glass: rgba(30, 41, 59, 0.85);
             --card-border: rgba(255, 255, 255, 0.1);
         }
 
         body {
-            margin: 0; padding: 15px;
-            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            margin: 0; padding: 10px;
+            background: #0f172a;
             color: #f1f5f9;
             font-family: 'Inter', sans-serif;
             display: flex; flex-direction: column; align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Modern Header */
+        /* Responsive Header */
         .header {
-            width: 100%; max-width: 500px;
+            width: 100%; max-width: 480px;
             display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px; padding: 0 5px;
         }
 
         h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem; letter-spacing: 2px;
+            font-size: 1rem; letter-spacing: 1px;
             margin: 0; color: var(--neon-blue);
-            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
         }
 
         .user-pill {
             background: var(--glass);
-            padding: 6px 12px; border-radius: 20px;
-            font-size: 0.8rem; border: 1px solid var(--card-border);
-            backdrop-filter: blur(10px);
+            padding: 5px 10px; border-radius: 15px;
+            font-size: 0.75rem; border: 1px solid var(--card-border);
         }
 
-        /* Main Card */
+        /* Glass Card Container */
         .glass-card {
             background: var(--glass);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(10px);
             border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 24px;
+            border-radius: 20px;
+            padding: 15px;
             width: 100%; max-width: 480px;
             box-sizing: border-box;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
 
         #reader {
-            width: 100%; border-radius: 16px; overflow: hidden;
-            border: 2px solid var(--card-border);
-            margin-bottom: 20px; background: #000;
+            width: 100% !important; border-radius: 12px; overflow: hidden;
+            border: 1px solid var(--card-border);
+            margin-bottom: 15px; background: #000;
         }
 
-        /* Form Styling */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        /* Responsive Form Grid */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .span-2 { grid-column: span 2; }
 
-        .input-group { display: flex; flex-direction: column; gap: 6px; }
-        label { font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .input-group { display: flex; flex-direction: column; gap: 4px; }
+        label { font-size: 0.6rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
 
         input, select {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.07);
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 12px; color: white;
-            font-size: 0.95rem; transition: 0.3s;
+            border-radius: 10px;
+            padding: 10px; color: white;
+            font-size: 0.9rem; width: 100%; box-sizing: border-box;
         }
 
-        input:focus { border-color: var(--neon-blue); outline: none; background: rgba(255, 255, 255, 0.1); }
-        input[readonly] { color: #64748b; background: transparent; cursor: not-allowed; }
+        input:focus { border-color: var(--neon-blue); outline: none; }
+        input[readonly] { color: #64748b; background: rgba(0,0,0,0.2); }
 
-        /* Scanner Button */
         .scan-trigger {
             background: #334155; border: none; border-radius: 10px;
-            padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            padding: 0 15px; cursor: pointer; color: white;
         }
-        .scan-trigger:active { background: var(--neon-blue); }
 
-        /* Action Buttons */
         .submit-btn {
             background: linear-gradient(135deg, #2563eb, #00d2ff);
-            color: white; border: none; border-radius: 14px;
-            padding: 18px; width: 100%; font-weight: bold;
-            font-size: 1rem; margin-top: 25px; cursor: pointer;
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
-            text-transform: uppercase; letter-spacing: 1px;
+            color: white; border: none; border-radius: 12px;
+            padding: 15px; width: 100%; font-weight: bold;
+            font-size: 1rem; margin-top: 20px; cursor: pointer;
         }
 
-        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* History Table */
-        .history-section {
-            width: 100%; max-width: 500px; margin-top: 30px;
+        /* SCROLLABLE HISTORY TABLE */
+        .history-container {
+            width: 100%; max-width: 480px; margin-top: 20px;
+            overflow-x: auto; /* This allows swiping left/right on phone */
+            background: var(--glass);
+            border-radius: 15px;
+            border: 1px solid var(--card-border);
         }
+
         .history-table {
-            width: 100%; border-collapse: separate; border-spacing: 0 8px;
-            font-size: 0.75rem;
+            width: 100%; border-collapse: collapse;
+            font-size: 0.65rem; min-width: 600px; /* Forces enough width for all data */
         }
-        .history-table th { padding: 10px; color: #94a3b8; text-align: left; font-weight: normal; }
-        .history-table tr { background: rgba(255,255,255,0.03); transition: 0.2s; }
-        .history-table td { padding: 12px 10px; border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
-        .history-table tr td:first-child { border-left: 1px solid var(--card-border); border-radius: 12px 0 0 12px; }
-        .history-table tr td:last-child { border-right: 1px solid var(--card-border); border-radius: 0 12px 12px 0; }
 
-        /* Neon Status */
-        .status-bar { font-size: 0.8rem; text-align: center; margin-bottom: 10px; font-weight: bold; }
-        .dot { height: 8px; width: 8px; background-color: var(--neon-green); border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px var(--neon-green); }
+        .history-table th { 
+            padding: 10px; color: #94a3b8; text-align: left; 
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .history-table td { 
+            padding: 10px; border-top: 1px solid var(--card-border); 
+            color: #e2e8f0;
+        }
+
+        .status-bar { font-size: 0.75rem; text-align: center; margin-bottom: 10px; }
+        .dot { height: 7px; width: 7px; background-color: var(--neon-green); border-radius: 50%; display: inline-block; margin-right: 5px; }
 
         .hidden { display: none !important; }
     </style>
@@ -124,37 +124,37 @@
 <body>
 
     <div id="setup-screen" class="glass-card hidden">
-        <h2 style="text-align:center; font-family: 'Orbitron';">CORE ACCESS</h2>
+        <h2 style="text-align:center; font-family: 'Orbitron'; font-size: 1.2rem;">SYSTEM ACCESS</h2>
         <div class="input-group">
-            <label>Operator Auth</label>
-            <select id="user-select-list" style="width:100%; margin-bottom:20px;"></select>
+            <label>Select Operator</label>
+            <select id="user-select-list"></select>
         </div>
-        <button class="submit-btn" onclick="saveUser()">INITIALIZE SYSTEM</button>
+        <button class="submit-btn" onclick="saveUser()">INITIALIZE</button>
     </div>
 
-    <div id="main-screen" class="hidden" style="width:100%; max-width:500px;">
-        <div class="header">
+    <div id="main-screen" class="hidden" style="width:100%;">
+        <div class="header" style="margin: 0 auto 15px auto;">
             <h1>SMT PRO</h1>
-            <div class="user-pill">OP: <span id="display-user" style="color:var(--neon-blue); font-weight:bold;"></span> <span onclick="resetUser()" style="margin-left:10px; cursor:pointer; color:#ef4444;">×</span></div>
+            <div class="user-pill"><span id="display-user"></span> <span onclick="resetUser()" style="color:#ef4444; margin-left:8px;">×</span></div>
         </div>
 
-        <div class="glass-card">
-            <div id="status" class="status-bar"><span class="dot"></span>Ready to Scan</div>
+        <div class="glass-card" style="margin: 0 auto;">
+            <div id="status" class="status-bar"><span class="dot"></span>System Ready</div>
             <div id="reader"></div>
 
             <div class="grid">
                 <div class="input-group span-2">
-                    <label>Box ID</label>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="box-no" placeholder="PCBA-..." style="flex:1">
+                    <label>Box No.</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="box-no" placeholder="Scan PCBA-...">
                         <button class="scan-trigger" onclick="resumeScanner('box-no')">📷</button>
                     </div>
                 </div>
 
                 <div class="input-group span-2">
                     <label>Process</label>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="process-input" placeholder="OQC..." style="flex:1">
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="process-input" placeholder="Scan OQC...">
                         <button class="scan-trigger" onclick="resumeScanner('process-input')">📷</button>
                     </div>
                 </div>
@@ -176,8 +176,8 @@
                 </div>
 
                 <div class="input-group span-2">
-                    <label>Model Info</label>
-                    <input type="text" id="model-name" readonly placeholder="Waiting for model scan...">
+                    <label>Model</label>
+                    <input type="text" id="model-name" readonly>
                 </div>
 
                 <div class="input-group">
@@ -192,18 +192,24 @@
 
                 <div class="input-group span-2">
                     <label style="color:var(--neon-blue)">Quantity</label>
-                    <input type="number" id="qty-input" placeholder="Enter Amount" style="font-weight:bold; font-size:1.2rem; border-color:var(--neon-blue)">
+                    <input type="number" id="qty-input" placeholder="0">
                 </div>
             </div>
 
-            <button class="submit-btn" id="submit-btn" onclick="submitData()">TRANSMIT DATA</button>
+            <button class="submit-btn" id="submit-btn" onclick="submitData()">SUBMIT RECORD</button>
         </div>
 
-        <div class="history-section">
-            <label>Recent Logs</label>
+        <div class="history-container" style="margin: 20px auto;">
             <table class="history-table">
                 <thead>
-                    <tr><th>BOX</th><th>ACT</th><th>MODEL</th><th>QTY</th></tr>
+                    <tr>
+                        <th>Box No</th>
+                        <th>Process</th>
+                        <th>Action</th>
+                        <th>I/O</th>
+                        <th>Model</th>
+                        <th>Qty</th>
+                    </tr>
                 </thead>
                 <tbody id="history-body"></tbody>
             </table>
@@ -211,19 +217,19 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjag_tmrl6vZNkzTn41CgsJN5_sMwb8KpfYZQ9SVm_yROGPLUSWrh_DR8iXWRQhuWSUw/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgiVeUtAe-mBpToqPmxobdd3wNmzKezTdo5qOvX_Cnix2OaLjuV39B8ZHtv5mcB65HIg/exec"; 
 
         let activeUser = localStorage.getItem('smt_op_v4');
         let localHistory = JSON.parse(localStorage.getItem('smt_hist_v4')) || [];
         let lastTarget = null;
         
-        const scanner = new Html5QrcodeScanner("reader", { fps: 24, qrbox: { width: 250, height: 250 } });
+        const scanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: { width: 250, height: 250 } });
 
         window.onload = function() {
             const list = document.getElementById('user-select-list');
             for(let i=1; i<=15; i++) {
                 let opt = document.createElement('option');
-                opt.value = "User " + i; opt.innerHTML = "ID: USER-00" + i;
+                opt.value = "User " + i; opt.innerHTML = "USER " + i;
                 list.appendChild(opt);
             }
             if (!activeUser) document.getElementById('setup-screen').classList.remove('hidden');
@@ -251,27 +257,27 @@
             const p = text.split(',');
             if (text.toUpperCase().includes("OQC")) {
                 document.getElementById('process-input').value = text.trim();
-                msg("✔ PROCESS DETECTED", "#39ff14"); scanner.resume();
+                msg("✔ PROCESS OK", "#39ff14"); scanner.resume();
             } else if (text.toUpperCase().includes("PCBA-")) {
                 document.getElementById('box-no').value = text.trim();
-                msg("✔ BOX DETECTED", "#39ff14"); scanner.resume();
+                msg("✔ BOX OK", "#39ff14"); scanner.resume();
             } else if (p.length >= 3) {
                 document.getElementById('model-name').value = p[0].trim();
                 document.getElementById('side-id').value = p[1].trim();
                 document.getElementById('location-id').value = p[2].trim();
                 document.getElementById('qty-input').focus();
-                msg("✔ MODEL SYNCED", "#00d2ff");
+                msg("✔ MODEL OK", "#00d2ff");
             } else if (lastTarget) {
                 document.getElementById(lastTarget).value = text.trim();
-                msg("✔ DATA UPDATED", "#00d2ff");
+                msg("✔ UPDATED", "#00d2ff");
             } else {
-                msg("⚠ UNKNOWN DATA", "#f59e0b"); scanner.resume();
+                msg("⚠ UNKNOWN", "orange"); scanner.resume();
             }
         }
 
         function resumeScanner(targetId) {
             lastTarget = targetId;
-            msg("AWAITING SCAN...", "#00d2ff");
+            msg("SCANNING...", "#00d2ff");
             scanner.resume();
         }
 
@@ -285,13 +291,14 @@
             const loc = document.getElementById('location-id').value;
             const qty = document.getElementById('qty-input').value;
 
-            if (!model || !qty) return alert("MISSING CORE DATA");
+            if (!model || !qty) return alert("Scan model and enter quantity!");
 
-            msg("TRANSMITTING...", "#00d2ff");
+            msg("SENDING...", "#00d2ff");
             document.getElementById('submit-btn').disabled = true;
 
-            localHistory.unshift({ box, action, model, qty });
-            localStorage.setItem('smt_hist_v4', JSON.stringify(localHistory.slice(0, 5)));
+            // Push ALL data to history
+            localHistory.unshift({ box, process, action, type, model, qty });
+            localStorage.setItem('smt_hist_v4', JSON.stringify(localHistory.slice(0, 10)));
             updateTableUI();
 
             fetch(SCRIPT_URL, {
@@ -299,10 +306,10 @@
                 body: JSON.stringify({ user: activeUser, box, process, action, type, model, side, loc, qty })
             })
             .then(() => {
-                msg("✔ UPLOAD COMPLETE", "#39ff14");
+                msg("✔ SAVED", "#39ff14");
                 resetForm(); scanner.resume(); 
             })
-            .catch(() => msg("❌ TRANSMISSION ERROR", "#ef4444"))
+            .catch(() => msg("❌ ERROR", "#ef4444"))
             .finally(() => document.getElementById('submit-btn').disabled = false);
         }
 
@@ -315,10 +322,12 @@
 
         function updateTableUI() {
             const body = document.getElementById('history-body');
-            body.innerHTML = localHistory.slice(0, 5).map(h => `
+            body.innerHTML = localHistory.slice(0, 10).map(h => `
                 <tr>
-                    <td style="color:#94a3b8">${h.box || '-'}</td>
-                    <td style="font-weight:bold">${h.action}</td>
+                    <td>${h.box || '-'}</td>
+                    <td>${h.process || '-'}</td>
+                    <td>${h.action}</td>
+                    <td>${h.type}</td>
                     <td>${h.model}</td>
                     <td style="color:var(--neon-blue); font-weight:bold;">${h.qty}</td>
                 </tr>
@@ -327,12 +336,12 @@
 
         function msg(t, c) {
             const s = document.getElementById('status');
-            s.innerHTML = `<span class="dot" style="background:${c}; box-shadow: 0 0 8px ${c}"></span>${t}`;
+            s.innerHTML = `<span class="dot" style="background:${c}"></span>${t}`;
             s.style.color = c;
         }
 
         function resetUser() {
-            if(confirm("TERMINATE SESSION?")) {
+            if(confirm("Logout?")) {
                 localStorage.removeItem('smt_op_v4');
                 location.reload();
             }
